@@ -32,7 +32,7 @@ io.on('connect', function (socket) {
     });
 
     socket.on('pointerdown', function (data) {
-        console.log('player down: ' + JSON.stringify(data));
+        console.log('player moves: ' + JSON.stringify(data));
         game.moveTo(socket.id, data.x, data.y);
     });
 });
