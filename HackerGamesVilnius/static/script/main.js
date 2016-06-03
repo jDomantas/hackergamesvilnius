@@ -78,8 +78,6 @@ var app = playground({
 	/* pointers (mouse and touches) */
     pointerdown: function (data) {
 		this.socket.emit('pointerdown', { x: data.x, y: data.y });
-	pointerdown: function (data) {
-		this.socket.emit('pointerdown', { x: data.x, y: data.y });
 	},
 	pointerup: function (data) { },
 	pointermove: function(data) { },
