@@ -11,9 +11,9 @@ http.listen(listeningPort, function () { console.log('listening on *:' + listeni
 
 io.on('connect', function (socket) {
     
-    console.log("connected" + socket)
+    console.log("connected: " + JSON.stringify(socket));
 
     socket.on('disconnect', function () {
-        console.log("disconnected: " + socket);
+        console.log("disconnected: " + JSON.stringify(socket));
     });
 });
