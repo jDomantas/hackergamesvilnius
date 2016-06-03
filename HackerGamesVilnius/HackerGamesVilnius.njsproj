@@ -30,6 +30,7 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="game.js" />
     <Compile Include="server.js" />
     <Compile Include="static\script\main.js" />
     <Compile Include="static\script\playground.js" />
