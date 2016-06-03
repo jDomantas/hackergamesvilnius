@@ -16,7 +16,7 @@ var lastTime = Date.now();
 setInterval(function () {
     var now = Date.now();
     var dt = (now - lastTime) / 1000.0;
-    console.log('stepping, passed: ' + dt);
+    //console.log('stepping, passed: ' + dt);
     game.step(dt);
     lastTime = now;
 }, 1000.0 / 10.0);
@@ -24,14 +24,15 @@ setInterval(function () {
 io.on('connect', function (socket) {
     
     console.log("connected: " + socket.id + " from " + socket.handshake.address);
-    game.playerJoined(socket.id);
+    game.joined(socket, socket.id);
 
     socket.on('disconnect', function () {
         console.log("disconnected: " + socket.id);
-        game.playerLeft(socket.id);
+        game.left(socket.id);
     });
 
     socket.on('pointerdown', function (data) {
+        console.log('player down: ' + JSON.stringify(data));
         game.moveTo(socket.id, data.x, data.y);
     });
 });
