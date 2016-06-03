@@ -4,8 +4,26 @@ var app = playground({
 	preload: function() { },
 
 	/* assets from preloader available, push some more for main loader */
-    create: function () {
-        var socket = io();
+	create: function () {
+		var socket = io();
+		var self = this;
+		self.socket = socket;
+
+		self.socket.on('players', function (data) {
+			self.players = data;
+		});
+
+		self.socket.on('joined', function (data) {
+			self.players.push(data); //add player to players list		
+		});
+
+		self.socket.on('left', function (data) {
+			for (var i = 0; i < self.players.length; i++) {
+				if (self.players.id === data) {
+					self.players.splice(i, 1); //remove player from players list
+				}
+			}
+		});
     },
 
 	/* called when main loader has finished	- you want to setState here */
@@ -15,11 +33,16 @@ var app = playground({
 	resize: function() { },
 
 	/* called each frame to update logic */
-	step: function(dt) { },
+	step: function (dt) {
+		for (var player in self.players) {
+			player.x = dt * 50;
+		}
+	},
 
 	/* called each frame to update rendering */
 	render: function(dt) {
 		this.layer.clear("#FF9000");
+
 		this.layer.fillStyle("#FFFFFF").fillRect(100, 100, 200, 200);
 	},
 
@@ -33,13 +56,15 @@ var app = playground({
 	keyup: function(data) { },
 
 	/* pointers (mouse and touches) */
-	pointerdown: function(data) { },
-	pointerup: function(data) { },
+	pointerdown: function (data) {
+		self.socket.emit('pointerdown', { x: data.x, y: data.y });
+	},
+	pointerup: function (data) { },
 	pointermove: function(data) { },
 
 	/* mouse trap */
-	mousedown: function(data) { },
-	mouseup: function(data) { },
+	mousedown: function (data) { },
+	mouseup: function (data) { },
 	mousemove: function(data) { },
 
 	/* finger trap - ouch */
