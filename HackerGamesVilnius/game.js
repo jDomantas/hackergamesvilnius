@@ -1,7 +1,13 @@
-﻿function Game(io) {
+﻿var sim = require('./static/script/shared/sim.js');
+
+function Game(io) {
     this.io = io;
     this.players = [];
+    this.obstacles = [{ x: 800, y: 400, r: 200 }];
     this.nextState = 0;
+
+    this.systemShutdownSpeed = 3;
+    this.systemPowerupSpeed = 0.15;
 }
 
 Game.prototype.moveTo = function (id, x, y) {
@@ -21,15 +27,22 @@ Game.prototype.joined = function (socket, id) {
         tx: 0,
         ty: 0,
         dir: Math.random() * Math.PI * 2,
-        speed: 100,
-        turnSpeed: 5,
         td: 0,
+        engines: 0.5,
+        tengines: 0.5,
+        fsh: 0.5,
+        tfsh: 0.5,
+        bsh: 0,
+        tbsh: 0,
+        gun: 0.5,
+        tgun: 0.5,
     };
     player.tx = player.x;
     player.ty = player.y;
     player.td = player.dir;
     
     socket.emit('players', this.players);
+    socket.emit('map', this.obstacles);
 
     this.players.push(player);
     this.io.emit('joined', player);
@@ -63,33 +76,15 @@ Game.prototype.step = function (dt) {
 
     for (var i = this.players.length; i--; ) {
         var p = this.players[i];
-        this.updatePlayer(p, dt);
+        sim.updatePlayer(p, dt, this.players, this.obstacles);
     }
-
 }
 
-Game.prototype.updatePlayer = function (p, dt) {
-    if (p.td != p.dir) {
-        var deltadir = p.td - p.dir;
-        //console.log('delta: ' + deltadir);
-        while (deltadir > Math.PI) deltadir -= Math.PI * 2;
-        while (deltadir < -Math.PI) deltadir += Math.PI * 2;
-        var s = p.turnSpeed * dt;
-        if (deltadir > s) p.dir -= s;
-        else if (deltadir < -s) p.dir += s;
-        else p.dir = p.td;
-    } else {
-        var dx = p.tx - p.x;
-        var dy = p.ty - p.y;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > p.speed * dt) {
-            p.x += dx / dist * p.speed * dt;
-            p.y += dy / dist * p.speed * dt;
-        } else {
-            p.x = p.tx;
-            p.y = p.ty;
-        }
-    }
+Game.prototype.systemPower = function (id, engines) {
+    var player = this.getPlayer(id);
+    player.tengines = engines;
+    if (player.tengines < 0) player.tengines = 0;
+    if (player.tengines > 1) player.tengines = 1;
 }
 
 module.exports = Game;

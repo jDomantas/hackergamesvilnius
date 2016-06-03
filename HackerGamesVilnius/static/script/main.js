@@ -31,6 +31,10 @@ var app = playground( {
             }
         });
         
+        self.socket.on('map', function (data) {
+            self.map = data;
+        });
+        
         self.socket.on('joined', function (data) {
             self.players.push(data); //add player to players list		
             self.initPlayer(data);
@@ -70,14 +74,22 @@ var app = playground( {
             this.layer
                 .save()
                 .translate(p.vx, p.vy)
-                .rotate(p.dir)
-                .drawImage(this.images.ship, -this.images.ship.width / 2, -this.images.ship.height / 2)
+                .rotate(p.vd)
+                .beginPath()
+                .moveTo(25, 0)
+                .lineTo(-20, 20)
+                .lineTo(-20, -20)
+                .closePath()
+                .fillStyle('#000')
+                .fill()
+                //.drawImage(this.images.ship, -this.images.ship.width / 2, -this.images.ship.height / 2)
                 .restore();
             
-            this.layer.fillStyle("#FFF").fillRect(p.vx - 5, p.vy - 5, 10, 10);
-            var dx = Math.cos(p.vd) * 30;
-            var dy = Math.sin(p.vd) * 30;
-            //this.layer.
+            this.layer.fillStyle("#FFF").fillRect(p.x - 3, p.y - 3, 6, 6);
+        }
+
+        for (var i = this.map.length; i--; ) {
+            this.layer.fillStyle('#F30').fillCircle(this.map[i].x, this.map[i].y, this.map[i].r);
         }
 	},
     
@@ -89,36 +101,18 @@ var app = playground( {
     },
     
     updatePlayer: function (p, dt) {
-        this.updateServerSide(p, dt);
-        var interpolation = 0.1;
+        if (this.map)
+            sim.updatePlayer(p, dt, this.players, this.map);
+        var interpolation = 0.08;
         p.vx = p.vx * (1 - interpolation) + p.x * interpolation;
         p.vy = p.vy * (1 - interpolation) + p.y * interpolation;
-        p.vd = p.vd * (1 - interpolation) + p.dir * interpolation;
-    },
-
-    /* this function should be EXACTLY the same as Game.prototype.updatePlayer */
-    updateServerSide: function (p, dt) {
-        if (p.td != p.dir) {
-            var deltadir = p.td - p.dir;
-            //console.log('delta: ' + deltadir);
-            while (deltadir > Math.PI) deltadir -= Math.PI * 2;
-            while (deltadir < -Math.PI) deltadir += Math.PI * 2;
-            var s = p.turnSpeed * dt;
-            if (deltadir > s) p.dir -= s;
-            else if (deltadir < -s) p.dir += s;
-            else p.dir = p.td;
-        } else {
-            var dx = p.tx - p.x;
-            var dy = p.ty - p.y;
-            var dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist > p.speed * dt) {
-                p.x += dx / dist * p.speed * dt;
-                p.y += dy / dist * p.speed * dt;
-            } else {
-                p.x = p.tx;
-                p.y = p.ty;
-            }
-        }
+        var interpolationAngle = 0.2;
+        var dd = p.dir - p.vd;
+        while (dd > Math.PI) dd -= Math.PI * 2;
+        while (dd < -Math.PI) dd += Math.PI * 2;
+        var dest = p.vd + dd;
+        p.vd = p.vd * (1 - interpolationAngle) + dest * interpolationAngle;
+        
     },
 
 	/* states related events (called only for application) */
@@ -127,7 +121,10 @@ var app = playground( {
 	leavestate: function() { },
 
 	/* keyboard events */
-	keydown: function(data) { },
+    keydown: function (data) { 
+        if (data.key === 'q') this.socket.emit('power', { engines: 0 });
+        if (data.key === 'w') this.socket.emit('power', { engines: 1 });
+    },
 	keyup: function(data) { },
 
 	/* pointers (mouse and touches) */
