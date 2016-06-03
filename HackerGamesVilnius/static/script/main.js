@@ -36,24 +36,22 @@ var app = playground({
 
 	/* called each frame to update logic */
     step: function (dt) {
-        if (this.players)
-            console.log('have players: ' + this.players.length);
-        for (var i in this.players) {
-            var p = this.players[i];
-            //console.log('with: ' + p);
-            var dx = p.tx - p.x;
-            var dy = p.ty - p.y;
-            var dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist > 50 * dt) {
-                p.x += dx / dist * 50 * dt;
-                p.y += dy / dist * 50 * dt;
-            } else {
-                p.x = p.tx;
-                p.y = p.ty;
-            }
-	step: function (dt) {
-		for (var player in this.players) {
-			player.x = dt * 50;
+		if (this.players)
+			console.log('have players: ' + this.players.length);
+		for (var i in this.players) {
+			var p = this.players[i];
+			//console.log('with: ' + p);
+			var dx = p.tx - p.x;
+			var dy = p.ty - p.y;
+			var dist = Math.sqrt(dx * dx + dy * dy);
+			if (dist > 50 * dt) {
+				p.x += dx / dist * 50 * dt;
+				p.y += dy / dist * 50 * dt;
+			} 
+			else {
+				p.x = p.tx;
+				p.y = p.ty;
+			}		
 		}
 	},
 
