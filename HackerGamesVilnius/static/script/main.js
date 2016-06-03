@@ -11,10 +11,12 @@ var app = playground({
 
 		self.socket.on('players', function (data) {
 			self.players = data;
+			console.log(data);
 		});
 
 		self.socket.on('joined', function (data) {
-			self.players.push(data); //add player to players list		
+			self.players.push(data); //add player to players list
+			console.log(data);
 		});
 
 		self.socket.on('left', function (data) {
@@ -34,7 +36,7 @@ var app = playground({
 
 	/* called each frame to update logic */
 	step: function (dt) {
-		for (var player in self.players) {
+		for (var player in this.players) {
 			player.x = dt * 50;
 		}
 	},
@@ -42,7 +44,6 @@ var app = playground({
 	/* called each frame to update rendering */
 	render: function(dt) {
 		this.layer.clear("#FF9000");
-
 		this.layer.fillStyle("#FFFFFF").fillRect(100, 100, 200, 200);
 	},
 
@@ -57,7 +58,7 @@ var app = playground({
 
 	/* pointers (mouse and touches) */
 	pointerdown: function (data) {
-		self.socket.emit('pointerdown', { x: data.x, y: data.y });
+		this.socket.emit('pointerdown', { x: data.x, y: data.y });
 	},
 	pointerup: function (data) { },
 	pointermove: function(data) { },
