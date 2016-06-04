@@ -49,6 +49,8 @@ io.on('connect', function (socket) {
     
     console.log("connected: " + socket.id + " from " + socket.handshake.address);
     
+    socket.inGameRoom = false;
+
     if (game !== null) {
         socket.emit('timer', { inGame: true, time: Math.floor(game.timeToEnd) });
     } else {
@@ -63,6 +65,7 @@ io.on('connect', function (socket) {
 
         if (waitingForRound < maxPlayers) {
             socket.join('game');
+            socket.inGameRoom = true;
             waitingForRound += 1;
             io.emit('waitingCount', waitingForRound);
             socket.emit('joined', null);
@@ -75,7 +78,7 @@ io.on('connect', function (socket) {
 
     socket.on('disconnect', function () {
         if (game === null) {
-            if (socket.rooms.indexOf('game') >= 0) {
+            if (socket.inGameRoom) {
                 waitingForRound -= 1;
                 io.emit('waitingCount', waitingForRound);
             }
