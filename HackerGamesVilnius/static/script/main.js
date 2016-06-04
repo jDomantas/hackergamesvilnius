@@ -269,6 +269,23 @@ var app = playground( {
                     this.renderUI(this.images.guns, 100, p.guns, p.tguns);
                     this.renderUI(this.images.engines, 150, p.engines, p.tengines);
                     this.layer.fillStyle('#000').font('30px Verdana').fillText('HP: ' + p.hp, 10, 250);
+
+                    this.layer
+                        .save()
+                        .translate(p.vx, p.vy)
+                        .rotate(p.vd)
+                        .strokeStyle('#02B')
+                        .lineWidth(1)
+                        .beginPath()
+                        .arc(0, 0, 30, -0.5, 0.5)
+                        .lineTo(Math.cos(0.5) * 250, Math.sin(0.5) * 250)
+                        .moveTo(Math.cos(-0.5) * 250, Math.sin(-0.5) * 250)
+                        .arc(0, 0, 250, -0.5, 0.5)
+                        .moveTo(Math.cos(-0.5) * 250, Math.sin(-0.5) * 250)
+                        .lineTo(Math.cos(-0.5) * 30, Math.sin(-0.5) * 30)
+                        .closePath()
+                        .stroke()
+                        .restore();
                 }
             }
         }
