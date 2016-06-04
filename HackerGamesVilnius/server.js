@@ -1,4 +1,6 @@
-﻿var express = require('express');
+﻿"use strict";
+
+var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
@@ -93,7 +95,7 @@ io.on('connect', function (socket) {
                 socket.game.moveTo(socket.id, data.x, data.y);
         }
     });
-    
+
     socket.on('power', function (data) {
         if (socket.game) {
             if (typeof data === 'object' && 

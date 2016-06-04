@@ -1,4 +1,6 @@
-﻿var sim = require('./static/script/shared/sim.js');
+﻿"use strict";
+
+var sim = require('./static/script/shared/sim.js');
 
 function Game(io) {
     this.io = io;
@@ -57,7 +59,7 @@ Game.prototype.joined = function (socket, id) {
 
 Game.prototype.left = function (id) {
     for (var i = 0; i < this.players.length; i++)
-        if (this.players[i].id == id) {
+        if (this.players[i].id === id) {
             this.players.splice(i, 1);
             return;
         }
@@ -67,7 +69,7 @@ Game.prototype.left = function (id) {
 
 Game.prototype.getPlayer = function (id) {
     for (var i = this.players.length; i--; )
-        if (this.players[i].id == id)
+        if (this.players[i].id === id)
             return this.players[i];
 
     throw new Error("player with id='" + id + "' was not found");

@@ -1,4 +1,6 @@
-﻿(function (root) {
+﻿"use strict";
+
+(function (root) {
     
     var playerRadius = 20;
     var playerDiameter = 2 * playerRadius;

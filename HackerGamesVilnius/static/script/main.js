@@ -1,3 +1,5 @@
+"use strict";
+
 var app = playground({
     
     /* silently preload assets before main loader */
