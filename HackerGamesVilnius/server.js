@@ -32,7 +32,21 @@ io.on('connect', function (socket) {
     });
 
     socket.on('pointerdown', function (data) {
-        console.log('player moves: ' + JSON.stringify(data));
-        game.moveTo(socket.id, data.x, data.y);
+        if (typeof data === 'object' && 
+            typeof data.x === 'number' &&
+            typeof data.y === 'number')
+            game.moveTo(socket.id, data.x, data.y);
 	});
+    
+    socket.on('power', function (data) {
+        if (typeof data === 'object' && 
+            typeof data.engines === 'number' && 
+            typeof data.guns === 'number' && 
+            typeof data.fshield === 'number' && 
+            typeof data.bshield === 'number') {
+            
+            console.log('changing power: ' + JSON.stringify(data));
+            game.systemPower(socket.id, data.engines, data.guns, data.fshield, data.bshield);
+        }
+    });
 });
