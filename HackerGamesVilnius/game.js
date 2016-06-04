@@ -14,7 +14,7 @@ function Game(io) {
     this.minFireDist = 30;
     this.maxFireDist = 350;
 
-    this.timeToEnd = 60;
+    this.timeToEnd = 20;
     this.nextFire = 0;
 
     this.localData = {};

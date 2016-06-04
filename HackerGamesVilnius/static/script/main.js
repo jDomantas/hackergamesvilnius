@@ -222,15 +222,18 @@ var app = playground( {
         while (this.shieldFrame >= 0.3)
             this.shieldFrame -= 0.3;
 
-        if (this.isGameRunning || (this.waitingPlayers >= 2)) {
-            this.timer -= dt;
+		if (this.isGameRunning || (this.waitingPlayers >= 2)) {
+			if(this.timer > 0)
+				this.timer -= dt;
             if (this.timer < 0)
                 this.timer = 0;
             var time = Math.floor(this.timer);
-            if (!this.isGameRunning)
-                $("#timer").text(this.gameOverMsg + "Players joined: " + this.waitingPlayers + "/20, time to round: " + time);
-            else
-                $("#timer").text(this.gameOverMsg + "Round time left: " + time);
+			if (!this.isGameRunning)
+				$("#timer").text(this.gameOverMsg + "Players joined: " + this.waitingPlayers + "/20, time to round: " + time);
+			else {
+				$("#timer").text(this.gameOverMsg + "Round time left: " + time);
+				$("#bbtn").prop('disabled', true);
+			}
         } else {
             $("#timer").text(this.gameOverMsg + "Players joined: " + this.waitingPlayers + "/20, waiting for more.");
         }
