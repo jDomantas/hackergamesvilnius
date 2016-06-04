@@ -54,7 +54,7 @@ var app = playground( {
         self.socket.on('players', function (data) {
             var oldPlayers = self.players;
             if (self.selfTeam === 0 && self.selfID) {
-                var ship = self.getPlayer(this.selfID);
+                var ship = self.getPlayer(self.selfID);
                 if (ship)
                     self.selfTeam = ship.team;
             }
@@ -73,8 +73,6 @@ var app = playground( {
                 for (var i = data.length; i--; )
                     self.initPlayer(data[i]);
             }
-
-            console.log('got players');
         });
         
         self.socket.on('map', function (data) {
@@ -84,6 +82,7 @@ var app = playground( {
         
         self.socket.on('self', function (id) {
             self.selfID = id;
+            self.selfTeam = 0;
         })
 
         self.socket.on('joined', function (data) {
@@ -366,17 +365,9 @@ var app = playground( {
 				for (var i = this.map.length; i--; )
 					this.layer.fillStyle('#F30').fillCircle(this.map[i].x, this.map[i].y, this.map[i].r);
 			
-			this.layer.setTransform(1, 0, 0, 1, 0, 0);
-
             if (this.selfID) {
                 var p = this.getPlayer(this.selfID);
                 if (p) {
-                    this.renderUI(this.images.fshield, 0, p.fsh, p.tfsh);
-                    this.renderUI(this.images.bshield, 50, p.bsh, p.tbsh);
-                    this.renderUI(this.images.guns, 100, p.guns, p.tguns);
-                    this.renderUI(this.images.engines, 150, p.engines, p.tengines);
-                    this.layer.fillStyle('#000').font('30px Verdana').fillText('HP: ' + p.hp, 10, 250);
-
                     this.layer
                         .save()
                         .a(0.1)
@@ -397,6 +388,21 @@ var app = playground( {
                         .restore();
                 }
             }
+            
+            this.layer.setTransform(1, 0, 0, 1, 0, 0);
+
+            if (this.selfID) {
+                var p = this.getPlayer(this.selfID);
+                if (p) {
+                    this.renderUI(this.images.fshield, 0, p.fsh, p.tfsh);
+                    this.renderUI(this.images.bshield, 50, p.bsh, p.tbsh);
+                    this.renderUI(this.images.guns, 100, p.guns, p.tguns);
+                    this.renderUI(this.images.engines, 150, p.engines, p.tengines);
+                    this.layer.fillStyle('#000').font('30px Verdana').fillText('HP: ' + p.hp, 10, 250);
+
+                }
+            }
+
         }
     },
 
