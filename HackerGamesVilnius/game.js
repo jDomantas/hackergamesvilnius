@@ -12,7 +12,7 @@ function Game(io) {
     this.minFireDist = 30;
     this.maxFireDist = 250;
 
-    this.timeToEnd = 180;
+    this.timeToEnd = 20;
 }
 
 Game.prototype.moveTo = function (id, x, y) {
@@ -42,7 +42,7 @@ Game.prototype.joined = function (socket, id) {
         tbsh: 0,
         guns: 0.5,
         tguns: 0.5,
-        hp: 10000000, //10,
+        hp: 10,//000000, //10,
         fly: false,
     };
     player.tx = player.x;
@@ -58,13 +58,23 @@ Game.prototype.joined = function (socket, id) {
 }
 
 Game.prototype.left = function (id) {
+    this.io.to('game').emit('left', id);
+
     for (var i = 0; i < this.players.length; i++)
         if (this.players[i].id === id) {
             this.players.splice(i, 1);
             return;
         }
-    
-    this.io.to('game').emit('left', id);
+}
+
+Game.prototype.dead = function (id) {
+    this.io.to('game').emit('dead', id);
+
+    for (var i = 0; i < this.players.length; i++)
+        if (this.players[i].id === id) {
+            this.players.splice(i, 1);
+            return;
+        }
 }
 
 Game.prototype.getPlayer = function (id) {
@@ -83,7 +93,7 @@ Game.prototype.step = function (dt) {
     if (this.nextState < 0) {
         for (var i = this.players.length; i--; )
             if (this.players[i].hp <= 0)
-                this.left(this.players[i].id);
+                this.dead(this.players[i].id);
 
         this.nextState += 0.3;
         this.io.to('game').emit('players', this.players);
@@ -98,6 +108,8 @@ Game.prototype.step = function (dt) {
 
 Game.prototype.systemPower = function (id, engines, guns, fshield, bshield) {
     var player = this.getPlayer(id);
+    if (player.hp <= 0)
+        return;
     
     player.tengines = engines;
     if (player.tengines < 0) player.tengines = 0;

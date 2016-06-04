@@ -16,7 +16,7 @@ http.listen(listeningPort, function () { console.log('listening on *:' + listeni
 
 var maxPlayers = 10;
 var waitingForRound = 0;
-var roundWaitTime = 2;
+var roundWaitTime = 3;
 var timeOfStart = 0;
 
 var lastTime = Date.now();
@@ -29,7 +29,17 @@ setInterval(function () {
         game.step(dt);
         lastTime = now;
         if (game.timeToEnd <= 0) {
-            
+            io.emit('gameOver', "The game is over. ");
+            waitingForRound = 0;
+            io.emit('waitingCount', 0);
+            io.emit('timer', { inGame: false, time: 0 });
+            for (var id in io.nsps['/'].adapter.rooms['game'].sockets) {
+                var s = io.sockets.connected[id];
+                s.game = null;
+                s.leave('game');
+                s.inGameRoom = false;
+            }
+            game = null;
         }
     } else {
         // before the start of the game
@@ -41,7 +51,9 @@ setInterval(function () {
                 s.game = game;
                 game.joined(s, s.id);
             }
-
+            
+            lastTime = Date.now();
+            console.log('starting, time: ' + game.timeToEnd);
             io.emit('timer', { inGame: true, time: Math.floor(game.timeToEnd) });
         }
     }
@@ -57,8 +69,7 @@ io.on('connect', function (socket) {
         socket.emit('timer', { inGame: true, time: Math.floor(game.timeToEnd) });
     } else {
         socket.emit('waitingCount', waitingForRound);
-        if (waitingForRound >= 2)
-            socket.emit('timer', { inGame: false, time: Math.floor((timeOfStart - Date.now()) / 60) });
+        socket.emit('timer', { inGame: false, time: Math.floor((timeOfStart - Date.now()) / 1000) });
     }
 
     socket.on('joinGame', function () {
