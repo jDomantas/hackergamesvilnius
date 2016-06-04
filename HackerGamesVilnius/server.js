@@ -117,13 +117,11 @@ io.on('connect', function (socket) {
     });
 
     socket.on('power', function (data) {
-        if (socket.game) {
-            if (typeof data === 'object' && 
-                typeof data.engines === 'number' && 
-                typeof data.guns === 'number' && 
-                typeof data.fshield === 'number' && 
-                typeof data.bshield === 'number')
-                socket.game.systemPower(socket.id, data.engines, data.guns, data.fshield, data.bshield);
+		if (socket.game) {
+			if (typeof data === 'object' &&
+				typeof data.system === 'string' && 
+                typeof data.value === 'number')
+                socket.game.systemPower(socket.id, data.system, data.value);
         }
     });
 });

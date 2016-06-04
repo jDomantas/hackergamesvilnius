@@ -4,11 +4,18 @@
     
     var playerRadius = 20;
     var playerDiameter = 2 * playerRadius;
-    
-    var systemPowerdownSpeed = 1;
-    var systemPowerupSpeed = 0.15;
+	
+	var mapWidth = 2000;
+	var mapHeight = 2000;
 
-    var sim = {};
+    var systemPowerdownSpeed = 1;
+	var systemPowerupSpeed = 0.15;
+	var maxSystemPower = 1.5;
+
+	var sim = {};
+	sim.maxSystemPower = maxSystemPower;
+	sim.mapWidth = mapWidth;
+	sim.mapHeight = mapHeight;
 
     sim.updatePlayer = function (p, dt, players, obstacles) {
         var oldx = p.x;

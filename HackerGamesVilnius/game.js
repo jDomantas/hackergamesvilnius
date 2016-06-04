@@ -7,12 +7,14 @@ function Game(io) {
     this.players = [];
     this.obstacles = [{ x: 800, y: 400, r: 200 }];
     this.nextState = 0;
+	
+	this.spawnSize = 500;
 
     this.aimAngleWidth = 0.8;
     this.minFireDist = 30;
     this.maxFireDist = 350;
 
-    this.timeToEnd = 20;
+    this.timeToEnd = 60;
     this.nextFire = 0;
 
     this.localData = {};
@@ -147,26 +149,65 @@ Game.prototype.step = function (dt) {
     }
 }
 
-Game.prototype.systemPower = function (id, engines, guns, fshield, bshield) {
-    var player = this.getPlayer(id);
-    if (!player || player.hp <= 0)
-        return;
-    
-    player.tengines = engines;
-    if (player.tengines < 0) player.tengines = 0;
-    if (player.tengines > 1) player.tengines = 1;
-    
-    player.tguns = guns;
-    if (player.tguns < 0) player.tguns = 0;
-    if (player.tguns > 1) player.tguns = 1;
-    
-    player.tfsh = fshield;
-    if (player.tfsh < 0) player.tfsh = 0;
-    if (player.tfsh > 1) player.tfsh = 1;
-    
-    player.tbsh = bshield;
-    if (player.tbsh < 0) player.tbsh = 0;
-    if (player.tbsh > 1) player.tbsh = 1;
+Game.prototype.systemPower = function (id, system, value) {
+	var player = this.getPlayer(id);
+	if (!player || player.hp <= 0)
+		return;
+	
+	if (!system || (!value && value !== 0))
+		return;
+	
+	if (value < 0) value = 0;
+	if (value > 1) value = 1;
+	
+	switch (system) {
+		case 'engines':
+			player.tengines = value;
+			var otherUse = player.tguns + player.tfsh + player.tbsh;
+			var loadRemaining = sim.maxSystemPower - 1;
+			if (otherUse > loadRemaining) {
+				//give equivivalent percentage of load remaining to other systems
+				player.tguns = player.tguns / otherUse * loadRemaining;
+				player.tfsh = player.tfsh / otherUse * loadRemaining;
+				player.tbsh = player.tbsh / otherUse * loadRemaining;
+			}
+			break;
+		case 'guns':
+			player.tguns = value;
+			var otherUse = player.tengines + player.tfsh + player.tbsh;
+			var loadRemaining = sim.maxSystemPower - 1;
+			if (otherUse > loadRemaining) {
+				//give equivivalent percentage of load remaining to other systems
+				player.tengines = player.tengines / otherUse * loadRemaining;
+				player.tfsh = player.tfsh / otherUse * loadRemaining;
+				player.tbsh = player.tbsh / otherUse * loadRemaining;
+			}
+			break;
+		case 'fshield':
+			player.tfsh = value;
+			var otherUse = player.tguns + player.tengines + player.tbsh;
+			var loadRemaining = sim.maxSystemPower - 1;
+			if (otherUse > loadRemaining) {
+				//give equivivalent percentage of load remaining to other systems
+				player.tguns = player.tguns / otherUse * loadRemaining;
+				player.tengines = player.tengines / otherUse * loadRemaining;
+				player.tbsh = player.tbsh / otherUse * loadRemaining;
+			}
+			break;
+		case 'bshield':
+			player.tbsh = value;
+			var otherUse = player.tguns + player.tfsh + player.tengines;
+			var loadRemaining = sim.maxSystemPower - 1;
+			if (otherUse > loadRemaining) {
+				//give equivivalent percentage of load remaining to other systems
+				player.tguns = player.tguns / otherUse * loadRemaining;
+				player.tfsh = player.tfsh / otherUse * loadRemaining;
+				player.tengines = player.tengines / otherUse * loadRemaining;
+			}
+			break;
+		default:
+			break;
+	}
 }
 
 Game.prototype.updateGuns = function (p, fired) {

@@ -44,11 +44,6 @@ var app = playground( {
         this.particles = [];
         this.weaponPositions = [-10, 10, -18, 18];
 		self.socket = socket;
-		
-		setTimeout(function () {
-			$('#main_menu').removeClass('hidden');
-			$('#main_menu').addClass('visible');
-		}, 1250);
         
         $("#bbtn").on('click touchstart', function () { 
             socket.emit('joinGame', null);            
@@ -208,8 +203,13 @@ var app = playground( {
         this.images.bigup = [this.images.bigup1, this.images.bigup2, this.images.bigup3];
         this.images.smallfire = [this.images.smallfire1, this.images.smallfire2, this.images.smallfire3, this.images.smallfire4];
         this.images.midfire = [this.images.midfire1, this.images.midfire2, this.images.midfire3, 
-            this.images.midfire4, this.images.midfire5, this.images.midfire6];
-        this.images.bigfire = [this.images.bigfire1, this.images.bigfire2, this.images.bigfire3, this.images.bigfire4];
+        this.images.midfire4, this.images.midfire5, this.images.midfire6];
+		this.images.bigfire = [this.images.bigfire1, this.images.bigfire2, this.images.bigfire3, this.images.bigfire4];
+
+		setTimeout(function () {
+			$('#main_menu').removeClass('hidden');
+			$('#main_menu').addClass('visible');
+		}, 1250);
     },
     
     /* called after container/window has been resized */
@@ -350,7 +350,7 @@ var app = playground( {
 	},
 
 	renderGame: function (dt) {
-        
+        //background
         var currentColor = Math.floor(this.colorBlend / 4) % this.bgColors.length;
         var nextColor = (currentColor + 1) % this.bgColors.length;
         var delta = this.colorBlend / 4 - Math.floor(this.colorBlend / 4);
@@ -360,7 +360,8 @@ var app = playground( {
         res[0] = Math.round(this.bgColors[currentColor][0] * (1 - delta) + delta * this.bgColors[nextColor][0]);
         res[1] = Math.round(this.bgColors[currentColor][1] * (1 - delta) + delta * this.bgColors[nextColor][1]);
         res[2] = Math.round(this.bgColors[currentColor][2] * (1 - delta) + delta * this.bgColors[nextColor][2]);
-        this.layer.clear(cq.color(res));
+		this.layer.clear(cq.color(res));
+		//end background
 
 		this.layer.setTransform(1, 0, 0, 1, 0, 0);
 
@@ -370,7 +371,7 @@ var app = playground( {
 			this.camY = -this.clamp(player.vy - this.height / 2, 0, this.maxHeight - this.height);
 		}
 		this.layer.translate(this.camX, this.camY);
-        //this.layer.fillStyle("#FFFFFF").fillRect(100, 100, 200, 200);
+		//sets camera pos
 		
         this.layer.a(0.2).drawImage(this.images.bg, -100 + 100 * Math.cos(this.colorBlend / 10), -100 + 100 * Math.sin(this.colorBlend / 10), 2200, 2200).ra();
         this.layer.a(0.2).drawImage(this.images.bg2, -100 + 100 * Math.cos(this.colorBlend / 10 * Math.Pi + 3), -100 + 50 * Math.sin(this.colorBlend / 10 * 2), 2200, 2200).ra();
@@ -389,10 +390,7 @@ var app = playground( {
             
             for (var i = this.players.length; i--; ) {
                 this.renderShip(this.players[i], dt);                
-                //this.layer.fillStyle("#FFF").fillRect(p.x - 3, p.y - 3, 6, 6);
             }
-            
-
 			
 			if (this.map)
 				for (var i = this.map.length; i--; )
@@ -484,34 +482,93 @@ var app = playground( {
         var p = this.getPlayer(this.selfID);
 
         if (!p)
-            return;
+			return;
 
-        var settings = { engines: p.tengines, guns: p.tguns, fshield: p.tfsh, bshield: p.tbsh };
-        if (data.key === 'q') settings.fshield = 1;
-        if (data.key === 'a') settings.fshield = 0.5;
-        if (data.key === 'z') settings.fshield = 0;
-        
-        if (data.key === 'w') settings.bshield = 1;
-        if (data.key === 's') settings.bshield = 0.5;
-        if (data.key === 'x') settings.bshield = 0;
-        
-        if (data.key === 'e') settings.guns = 1;
-        if (data.key === 'd') settings.guns = 0.5;
-        if (data.key === 'c') settings.guns = 0;
-        
-        if (data.key === 'r') settings.engines = 1;
-        if (data.key === 'f') settings.engines = 0.5;
-        if (data.key === 'v') settings.engines = 0;
-        
+		switch (data.key) {
+			case 'q':
+				p.tfsh = 1;
+				this.socket.emit('power', { system: 'fshield', value: 1 });
+				break;
+			case 'a':
+				p.tfsh = 0.5;
+				this.socket.emit('power', { system: 'fshield', value: 0.5 });
+				break;
+			case 'z':
+				p.tfsh = 0;
+				this.socket.emit('power', { system: 'fshield', value: 0 });
+				break;
+			//-----------------//
+			case 'w':
+				p.tbsh = 1;
+				this.socket.emit('power', { system: 'bshield', value: 1 });
+				break;
+			case 's':
+				p.tbsh = 0.5;
+				this.socket.emit('power', { system: 'bshield', value: 0.5 });
+				break;
+			case 'x':
+				p.tbsh = 0;
+				this.socket.emit('power', { system: 'bshield', value: 0 });
+				break;
+			//-----------------//
+			case 'e':
+				p.tguns = 1;
+				this.socket.emit('power', { system: 'guns', value: 1 });
+				break;
+			case 'd':
+				p.tguns = 0.5;
+				this.socket.emit('power', { system: 'guns', value: 0.5 });
+				break;
+			case 'c':
+				p.tguns = 0;
+				this.socket.emit('power', { system: 'guns', value: 0 });
+				break;
+			//-----------------//
+			case 'r':
+				p.tengines = 1;
+				this.socket.emit('power', { system: 'engines', value: 1 });
+				break;
+			case 'f':
+				p.tengines = 0.5;
+				this.socket.emit('power', { system: 'engines', value: 0.5 });
+				break;
+			case 'v':
+				p.tengines = 0;
+				this.socket.emit('power', { system: 'engines', value: 0 });
+				break;
+			default:
+				return;
+				break;
+		}
+		var settings = { engines: p.tengines, guns: p.tguns, fshield: p.tfsh, bshield: p.tbsh };
+
         console.log('sending: ' + JSON.stringify(settings));
 
-        this.socket.emit('power', settings);
+        //this.socket.emit('power', settings);
     },
 	keyup: function(data) { },
 
 	/* pointers (mouse and touches) */
 	pointerdown: function (data) {
-		this.socket.emit('pointerdown', { x: data.x - this.camX, y: data.y - this.camY });
+		if (this.isGameRunning === true) {
+			if (data.x < 150 && data.x > 50 && data.y < 185 && data.y > 15) { //click on slider part
+				if (data.y > 15 && data.y < 35) {
+					this.socket.emit('power', { system: 'fshield', value: (data.x - 50) / 100 });
+				}
+				if (data.y > 65 && data.y < 85) {
+					this.socket.emit('power', { system: 'bshield', value: (data.x - 50) / 100 });
+				}
+				if (data.y > 115 && data.y < 135) {
+					this.socket.emit('power', { system: 'guns', value: (data.x - 50) / 100 });
+				}
+				if (data.y > 165 && data.y < 185) {
+					this.socket.emit('power', { system: 'engines', value: (data.x - 50) / 100 });
+				}
+			}
+			else {
+				this.socket.emit('pointerdown', { x: data.x - this.camX, y: data.y - this.camY });
+			}
+		}
 	},
 	pointerup: function (data) { },
 	pointermove: function(data) { },
