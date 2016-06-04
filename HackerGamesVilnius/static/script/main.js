@@ -2,7 +2,7 @@
 
 var app = playground( {
 	
-	container: document.getElementById('playground_container'),
+	//container: document.getElementById('playground_container'),
 
     /* silently preload assets before main loader */
     preload: function () { },
@@ -23,7 +23,7 @@ var app = playground( {
         this.particles = [];
         self.socket = socket;
         
-        $(".btn").click(function () { 
+        $("#bbtn").click(function () { 
             socket.emit('joinGame', null);            
         });
 
@@ -104,13 +104,13 @@ var app = playground( {
         self.socket.on('joinedRoom', function (_) {
             self.hasJoinedGame = true;
             // disable join button
-            $(".btn").prop('disabled', true);
+            $("#bbtn").prop('disabled', true);
             console.log('joined!');
         });
 
         self.socket.on('gameover', function (msg) {
             self.gameOverMsg = msg;
-            $(".btn").prop('disabled', false);
+            $("#bbtn").prop('disabled', false);
             if (self.hasJoinedGame) {
                 $("#main_menu").display();
             }

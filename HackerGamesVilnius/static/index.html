@@ -6,19 +6,16 @@
     <link href="css/main.css" rel="stylesheet" />
 </head>
 <body>
-    <div id="playground_container" class="pgCanvas">
-        <!--canvas to be generated here-->
-    </div>
-
-    <div id="main_menu" style="z-index: 1;">
+    
+    <div id="main_menu" class="absolute">
         <div class="col-lg-12" style="text-align: center;">
             <div id="timer" class="col-lg-offset-5 col-lg-2">TIME IS NOW</div>
             <div id="buttonContainer" class="col-lg-offset-4 col-lg-4">
-                <button class="btn btn-lg-info">JOIN DAS GAME</button>
+                <button id="bbtn">JOIN DAS GAME</button>
             </div>
         </div>
     </div>
-
+    
     <script src="script/shared/sim.js"></script>
     <script src="script/playground.js"></script>
     <script src="script/main.js"></script>

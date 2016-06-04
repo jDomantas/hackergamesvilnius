@@ -1,9 +1,10 @@
 ﻿body {
 }
 
-.pgCanvas {
-    z-index: -1;
+.absolute {
+    z-index: 10000;
     position: absolute;
+    width:100%;
     top: 0px;
     left: 0px;
 }
