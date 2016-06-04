@@ -1,4 +1,4 @@
-var app = playground( {
+var app = playground({
     
     /* silently preload assets before main loader */
     preload: function () { },
@@ -8,6 +8,12 @@ var app = playground( {
         
         this.loadImages('guns', 'engines', 'fshield', 'bshield');
         
+        this.waitingPlayers = 0;
+        this.timer = 0;
+        this.isInLobby = true;
+        this.hasJoinedGame = false;
+        this.isGameRunning = false;
+
         var socket = io();
         var self = this;
         this.particles = [];
@@ -65,7 +71,22 @@ var app = playground( {
                     self.particles.push({ x: p.vx, y: p.vy, dx: dx, dy: dy, t: 0.3, d: t });
                 }
             }
-        })
+        });
+
+        self.socket.on('timer', function (data) {
+            self.isGameRunning = data.inGame;
+            self.timer = data.time;
+        });
+
+        self.socket.on('waitingCount', function (count) {
+            self.waitingPlayers = count;
+            // disable join button if count == 20, reenable otherwise
+        });
+
+        self.socket.on('joined', function (_) {
+            self.hasJoinedGame = true;
+            // disable join button
+        });
     },
     
     /* called when main loader has finished	- you want to setState here */
@@ -76,15 +97,20 @@ var app = playground( {
     
     /* called each frame to update logic */
     step: function (dt) {
-        if (this.players && this.map && this.selfID)
-            for (var i = this.players.length; i--; ) {
-                this.updatePlayer(this.players[i], dt);
+        if (this.isGameRunning || (this.isInLobby && this.waitingPlayers >= 2))
+            this.timer -= dt;
+        
+        if (!this.isInLobby && this.hasJoinedGame) {
+            if (this.players && this.map && this.selfID)
+                for (var i = this.players.length; i--; ) {
+                    this.updatePlayer(this.players[i], dt);
+                }
+            
+            for (var i = this.particles.length; i--; ) {
+                this.updateParticle(this.particles[i], dt);
+                if (this.particles[i].t <= 0)
+                    this.particles.splice(i, 1);
             }
-
-        for (var i = this.particles.length; i--; ) {
-            this.updateParticle(this.particles[i], dt);
-            if (this.particles[i].t <= 0)
-                this.particles.splice(i, 1);
         }
     },
     
@@ -109,6 +135,27 @@ var app = playground( {
     render: function (dt) {
         this.layer.clear("#FF9000");
         
+        if (!this.isInLobby && this.hasJoinedGame) {
+            this.renderGame(dt);
+        } else {
+            // display and update html ui
+        }
+	},
+    
+    renderUI: function (image, y, power, target) {
+        this.layer.drawImage(image, 0, y, 50, 50);
+        this.layer
+            .fillStyle('#666')
+            .fillRect(50, y + 20, 100, 10)
+            .fillStyle('#333')
+            .fillRect(50, y + 15, power * 100, 20)
+            .fillStyle('#000')
+            .fillRect(50 + target * 100 - 3, y + 10, 6, 30);
+    },
+    
+    renderGame: function (dt) {
+        this.layer.clear("#FF9000");
+        
         //this.layer.fillStyle("#FFFFFF").fillRect(100, 100, 200, 200);
         
         if (this.players) {
@@ -122,7 +169,7 @@ var app = playground( {
                     .lineTo(p.x + p.dx / 100, p.y + p.dy / 100)
                     .stroke();
             }
-
+            
             for (var i = this.players.length; i--; ) {
                 var p = this.players[i];
                 this.layer
@@ -150,35 +197,25 @@ var app = playground( {
                         .lineWidth(p.bsh * 8)
                         .arc(0, 0, 35, Math.PI / 2, Math.PI * 3 / 2)
                         .stroke();
-                    //.drawImage(this.images.ship, -this.images.ship.width / 2, -this.images.ship.height / 2)
+                //.drawImage(this.images.ship, -this.images.ship.width / 2, -this.images.ship.height / 2)
                 this.layer.restore();
                 
                 this.layer.fillStyle("#FFF").fillRect(p.x - 3, p.y - 3, 6, 6);
             }
-
+            
             if (this.selfID) {
                 var p = this.getPlayer(this.selfID);
                 this.renderUI(this.images.fshield, 0, p.fsh, p.tfsh);
                 this.renderUI(this.images.bshield, 50, p.bsh, p.tbsh);
                 this.renderUI(this.images.guns, 100, p.guns, p.tguns);
                 this.renderUI(this.images.engines, 150, p.engines, p.tengines);
+                this.layer.fillStyle('#000').font('30px Verdana').fillText('HP: ' + this.getPlayer(this.selfID).hp, 10, 250);
             }
         }
         
         if (this.map)
             for (var i = this.map.length; i--; )
                 this.layer.fillStyle('#F30').fillCircle(this.map[i].x, this.map[i].y, this.map[i].r);
-	},
-    
-    renderUI: function (image, y, power, target) {
-        this.layer.drawImage(image, 0, y, 50, 50);
-        this.layer
-            .fillStyle('#666')
-            .fillRect(50, y + 20, 100, 10)
-            .fillStyle('#333')
-            .fillRect(50, y + 15, power * 100, 20)
-            .fillStyle('#000')
-            .fillRect(50 + target * 100 - 3, y + 10, 6, 30);
     },
 
     getPlayer: function (id) {
