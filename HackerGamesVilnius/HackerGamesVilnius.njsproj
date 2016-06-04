@@ -35,6 +35,7 @@
     <Compile Include="static\script\bootstrap\bootstrap.min.js" />
     <Compile Include="static\script\bootstrap\npm.js" />
     <Compile Include="server.js" />
+    <Compile Include="static\script\jquery-2.2.4.min.js" />
     <Compile Include="static\script\main.js" />
     <Compile Include="static\script\playground.js" />
     <Compile Include="static\script\shared\sim.js" />
@@ -55,6 +56,7 @@
     <Content Include="README.md" />
     <Content Include="static\index.html" />
     <Content Include="static\css\main.css" />
+    <Content Include="static\script\jquery-2.2.4.min.map" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="static\css\" />

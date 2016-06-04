@@ -20,8 +20,9 @@ var roundWaitTime = 60;
 var timeOfStart = 0;
 
 var lastTime = Date.now();
+
 setInterval(function () {
-    if (game !== null) {
+    if (game != null) {
         // game is currently running
         var now = Date.now();
         var dt = (now - lastTime) / 1000.0;
@@ -74,7 +75,7 @@ io.on('connect', function (socket) {
 
     socket.on('disconnect', function () {
         if (game === null) {
-            if (socket.rooms.indefOf('game') >= 0) {
+            if (socket.rooms.indexOf('game') >= 0) {
                 waitingForRound -= 1;
                 io.emit('waitingCount', waitingForRound);
             }
