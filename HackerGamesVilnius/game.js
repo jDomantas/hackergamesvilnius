@@ -1,4 +1,6 @@
-﻿var sim = require('./static/script/shared/sim.js');
+﻿"use strict";
+
+var sim = require('./static/script/shared/sim.js');
 
 function Game(io) {
     this.io = io;

@@ -1,4 +1,6 @@
-﻿var express = require('express');
+﻿"use strict";
+
+var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
@@ -25,7 +27,6 @@ io.on('connect', function (socket) {
     
     console.log("connected: " + socket.id + " from " + socket.handshake.address);
     game.joined(socket, socket.id);
-
     socket.on('disconnect', function () {
         console.log("disconnected: " + socket.id);
         game.left(socket.id);
