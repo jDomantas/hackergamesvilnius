@@ -28,6 +28,9 @@ setInterval(function () {
         var dt = (now - lastTime) / 1000.0;
         game.step(dt);
         lastTime = now;
+        if (game.timeToEnd <= 0) {
+            
+        }
     } else {
         // before the start of the game
         if (waitingForRound >= 2 && Date.now() > timeOfStart) {

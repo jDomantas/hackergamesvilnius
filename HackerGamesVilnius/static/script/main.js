@@ -16,6 +16,7 @@ var app = playground( {
         this.timer = 0;
         this.hasJoinedGame = false;
         this.isGameRunning = false;
+        this.gameOverMsg = "";
 
         var socket = io();
         var self = this;
@@ -57,8 +58,10 @@ var app = playground( {
         })
 
         self.socket.on('joined', function (data) {
-            self.players.push(data); //add player to players list		
-            self.initPlayer(data);
+            if (!self.player) {
+                self.players.push(data); //add player to players list		
+                self.initPlayer(data);
+            }
         });
         
         self.socket.on('left', function (data) {
@@ -95,6 +98,7 @@ var app = playground( {
         self.socket.on('waitingCount', function (count) {
             self.waitingPlayers = count;
             // disable join button if count == 20, reenable otherwise
+            // disable or enable timer
         });
 
         self.socket.on('joinedRoom', function (_) {
@@ -102,6 +106,14 @@ var app = playground( {
             // disable join button
             $(".btn").prop('disabled', true);
             console.log('joined!');
+        });
+
+        self.socket.on('gameover', function (msg) {
+            self.gameOverMsg = msg;
+            $(".btn").prop('disabled', false);
+            if (self.hasJoinedGame) {
+                $("#main_menu").display();
+            }
         });
     },
     
@@ -116,7 +128,12 @@ var app = playground( {
         if (this.isGameRunning || (this.waitingPlayers >= 2)) {
             this.timer -= dt;
             var time = Math.floor(this.timer);
-            $("#timer").text("time left: " + time);
+            if (!this.isGameRunning)
+                $("#timer").text(this.gameOverMsg + "Players joined: " + this.waitingPlayers + "/20, time to round: " + time);
+            else
+                $("#timer").text(this.gameOverMsg + "Round time left: " + time);
+        } else {
+            $("#timer").text(this.gameOverMsg + "Players joined: " + this.waitingPlayers + "/20, waiting for more.");
         }
         
         if (this.isGameRunning && this.hasJoinedGame) {
