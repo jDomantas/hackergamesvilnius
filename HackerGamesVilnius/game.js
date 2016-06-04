@@ -8,11 +8,11 @@ function Game(io) {
     this.obstacles = [{ x: 800, y: 400, r: 200 }];
     this.nextState = 0;
 
-    this.aimAngleWidth = 1;
+    this.aimAngleWidth = 0.8;
     this.minFireDist = 30;
-    this.maxFireDist = 250;
+    this.maxFireDist = 350;
 
-    this.timeToEnd = 40;
+    this.timeToEnd = 20;
     this.nextFire = 0;
 
     this.localData = {};
@@ -69,7 +69,7 @@ Game.prototype.joined = function (socket, id) {
     player.ty = player.y;
     player.td = player.dir;
     
-    socket.emit('self', player.id);
+    socket.emit('self', { id: player.id, team: player.team });
     socket.emit('players', this.players);
     socket.emit('map', this.obstacles);
 

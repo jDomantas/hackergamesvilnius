@@ -18,9 +18,10 @@ var app = playground( {
             'damageoverlay1', 'damageoverlay2',
             'smallup1', 'smallup2', 'smallup3', 'smalldown1', 'smalldown2', 'smalldown3',
             'bigup1', 'bigup2', 'bigup3', 'bigdown1', 'bigdown2', 'bigdown3',
-            'bg',
+            'bg', 'bg2',
             'smallfire1', 'smallfire2', 'smallfire3', 'smallfire4',
-            'midfire1', 'midfire2', 'midfire3', 'midfire4', 'midfire5', 'midfire6');
+            'midfire1', 'midfire2', 'midfire3', 'midfire4', 'midfire5', 'midfire6',
+            'bigfire1', 'bigfire2', 'bigfire3', 'bigfire4');
         
         this.selfTeam = 0;
         this.waitingPlayers = 0;
@@ -55,10 +56,29 @@ var app = playground( {
 
         self.socket.on('players', function (data) {
             var oldPlayers = self.players;
+            if (self.selfTeam && self.selfID) {
+                var s = self.getPlayer(self.selfID);
+                if (s) {
+                    if (s.id !== self.selfID)
+                        throw new Error("wrong ship id");
+                    if (self.selfTeam !== s.team)
+                        throw new Error("wrong self team");
+                }
+            }
+
             if (self.selfTeam === 0 && self.selfID) {
                 var ship = self.getPlayer(self.selfID);
-                if (ship)
+                if (ship) {
                     self.selfTeam = ship.team;
+                    var s = self.getPlayer(self.selfID);
+                    if (s) {
+                        if (s.id !== self.selfID)
+                            throw new Error("wrong ship id");
+                        if (self.selfTeam !== s.team)
+                            throw new Error("wrong self team");
+                    }
+                    
+                }
             }
             self.players = data;
             if (oldPlayers) {
@@ -82,9 +102,19 @@ var app = playground( {
             console.log('got map');
         });
         
-        self.socket.on('self', function (id) {
-            self.selfID = id;
-            self.selfTeam = 0;
+        self.socket.on('self', function (data) {
+            self.selfID = data.id;
+            self.selfTeam = data.team;
+            
+            if (self.selfID) {
+                var s = self.getPlayer(self.selfID);
+                if (s && self.selfTeam) {
+                    if (s.id !== self.selfID)
+                        throw new Error("wrong ship id");
+                    if (self.selfTeam !== s.team)
+                        throw new Error("wrong self team");
+                }
+            }
         })
 
         self.socket.on('joined', function (data) {
@@ -164,6 +194,9 @@ var app = playground( {
                 $("#main_menu").show();
 
             self.hasJoinedGame = false;
+            self.selfTeam = 0;
+            self.selfID = null;
+            self.players = null;
         });
     },
     
@@ -176,6 +209,7 @@ var app = playground( {
         this.images.smallfire = [this.images.smallfire1, this.images.smallfire2, this.images.smallfire3, this.images.smallfire4];
         this.images.midfire = [this.images.midfire1, this.images.midfire2, this.images.midfire3, 
             this.images.midfire4, this.images.midfire5, this.images.midfire6];
+        this.images.bigfire = [this.images.bigfire1, this.images.bigfire2, this.images.bigfire3, this.images.bigfire4];
     },
     
     /* called after container/window has been resized */
@@ -215,17 +249,6 @@ var app = playground( {
         }
 	},
 	
-	getPlayer: function (id) {
-		for (var i = this.players.length; i--; )
-			if (this.players[i].id === id)
-				return this.players[i];
-		
-		if (id == this.selfID)
-			return null;
-		
-		throw new Error("can't find player with id: " + id);
-	},
-    
     updateParticle: function (p, dt) {
         if (p.t < 0.01) {
             p.t = 0;
@@ -271,11 +294,13 @@ var app = playground( {
         this.layer.save().translate(s.vx, s.vy).rotate(s.vd);
         
         var fireFrame = Math.floor(this.colorBlend * 10) % 24;
-        if ((s.x !== s.tx || s.y !== s.ty) && s.td === s.dir) {
-            if (s.engines < 0.2)
+        if (s.x !== s.tx || s.y !== s.ty) {
+            if (s.engines < 0.2 || s.td !== s.dir)
                 this.layer.drawImage(this.images.smallfire[fireFrame % 4], -96, -50);
-            else
+            else if (s.engines < 0.7)
                 this.layer.drawImage(this.images.midfire[fireFrame % 6], -96, -50);
+            else
+                this.layer.drawImage(this.images.bigfire[fireFrame % 4], -96, -50);
         }
 
 
@@ -347,7 +372,8 @@ var app = playground( {
 		this.layer.translate(this.camX, this.camY);
         //this.layer.fillStyle("#FFFFFF").fillRect(100, 100, 200, 200);
 		
-        this.layer.a(0.2).drawImage(this.images.bg, -100 + 100 * Math.cos(this.colorBlend / 10), -100 + 100 * Math.sin(this.colorBlend / 10), 3000, 3000).ra();
+        this.layer.a(0.2).drawImage(this.images.bg, -100 + 100 * Math.cos(this.colorBlend / 10), -100 + 100 * Math.sin(this.colorBlend / 10), 2200, 2200).ra();
+        this.layer.a(0.2).drawImage(this.images.bg2, -100 + 100 * Math.cos(this.colorBlend / 10 * Math.Pi + 3), -100 + 50 * Math.sin(this.colorBlend / 10 * 2), 2200, 2200).ra();
         
         if (this.players) {
             for (var i = this.particles.length; i--; ) {
@@ -383,12 +409,12 @@ var app = playground( {
                         .strokeStyle('#02B')
                         .lineWidth(3)
                         .beginPath()
-                        .arc(0, 0, 30, -0.5, 0.5)
-                        .lineTo(Math.cos(0.5) * 250, Math.sin(0.5) * 250)
-                        .moveTo(Math.cos(-0.5) * 250, Math.sin(-0.5) * 250)
-                        .arc(0, 0, 250, -0.5, 0.5)
-                        .moveTo(Math.cos(-0.5) * 250, Math.sin(-0.5) * 250)
-                        .lineTo(Math.cos(-0.5) * 30, Math.sin(-0.5) * 30)
+                        .arc(0, 0, 30, -0.4, 0.5)
+                        .lineTo(Math.cos(0.4) * 350, Math.sin(0.4) * 350)
+                        .moveTo(Math.cos(-0.4) * 350, Math.sin(-0.4) * 350)
+                        .arc(0, 0, 350, -0.4, 0.4)
+                        .moveTo(Math.cos(-0.4) * 350, Math.sin(-0.4) * 350)
+                        .lineTo(Math.cos(-0.4) * 30, Math.sin(-0.4) * 30)
                         .closePath()
                         .stroke()
                         .ra()
@@ -422,8 +448,6 @@ var app = playground( {
                 return this.players[i];
         
         return null;
-
-        throw new Error("can't find player with id: " + id);
     },
 
     /* initializes fields p.vx, p.vy, p.vdir */
