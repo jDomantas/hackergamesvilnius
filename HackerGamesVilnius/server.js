@@ -33,11 +33,13 @@ setInterval(function () {
             waitingForRound = 0;
             io.emit('waitingCount', 0);
             io.emit('timer', { inGame: false, time: 0 });
-            for (var id in io.nsps['/'].adapter.rooms['game'].sockets) {
-                var s = io.sockets.connected[id];
-                s.game = null;
-                s.leave('game');
-                s.inGameRoom = false;
+            if (io.nsps['/'].adapter.rooms['game']) {
+                for (var id in io.nsps['/'].adapter.rooms['game'].sockets) {
+                    var s = io.sockets.connected[id];
+                    s.game = null;
+                    s.leave('game');
+                    s.inGameRoom = false;
+                }
             }
             game = null;
         }
