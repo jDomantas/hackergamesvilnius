@@ -58,7 +58,7 @@ var app = playground( {
         })
 
         self.socket.on('joined', function (data) {
-            if (!self.player) {
+            if (self.players) {
                 self.players.push(data); //add player to players list		
                 self.initPlayer(data);
             }
