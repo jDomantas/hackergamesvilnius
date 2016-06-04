@@ -40,7 +40,13 @@ io.on('connect', function (socket) {
     
     socket.on('power', function (data) {
         if (typeof data === 'object' && 
-            typeof data.engines === 'number')
-            game.systemPower(socket.id, data.engines);
+            typeof data.engines === 'number' && 
+            typeof data.guns === 'number' && 
+            typeof data.fshield === 'number' && 
+            typeof data.bshield === 'number') {
+            
+            console.log('changing power: ' + JSON.stringify(data));
+            game.systemPower(socket.id, data.engines, data.guns, data.fshield, data.bshield);
+        }
     });
 });

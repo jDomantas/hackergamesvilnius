@@ -34,13 +34,14 @@ Game.prototype.joined = function (socket, id) {
         tfsh: 0.5,
         bsh: 0,
         tbsh: 0,
-        gun: 0.5,
-        tgun: 0.5,
+        guns: 0.5,
+        tguns: 0.5,
     };
     player.tx = player.x;
     player.ty = player.y;
     player.td = player.dir;
     
+    socket.emit('self', player.id);
     socket.emit('players', this.players);
     socket.emit('map', this.obstacles);
 
@@ -80,11 +81,24 @@ Game.prototype.step = function (dt) {
     }
 }
 
-Game.prototype.systemPower = function (id, engines) {
+Game.prototype.systemPower = function (id, engines, guns, fshield, bshield) {
     var player = this.getPlayer(id);
+    
     player.tengines = engines;
     if (player.tengines < 0) player.tengines = 0;
     if (player.tengines > 1) player.tengines = 1;
+    
+    player.tguns = guns;
+    if (player.tguns < 0) player.tguns = 0;
+    if (player.tguns > 1) player.tguns = 1;
+    
+    player.tfsh = fshield;
+    if (player.tfsh < 0) player.tfsh = 0;
+    if (player.tfsh > 1) player.tfsh = 1;
+    
+    player.tbsh = bshield;
+    if (player.tbsh < 0) player.tbsh = 0;
+    if (player.tbsh > 1) player.tbsh = 1;
 }
 
 module.exports = Game;

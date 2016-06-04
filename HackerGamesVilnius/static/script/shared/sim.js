@@ -3,7 +3,7 @@
     var playerRadius = 20;
     var playerDiameter = 2 * playerRadius;
     
-    var systemPowerdownSpeed = 3;
+    var systemPowerdownSpeed = 1;
     var systemPowerupSpeed = 0.15;
 
     var sim = {};
@@ -100,7 +100,7 @@
         }
 
         if (p.tfsh > p.fsh) {
-            p.engines += systemPowerupSpeed * dt;
+            p.fsh += systemPowerupSpeed * dt;
             if (p.fsh > p.tfsh)
                 p.fsh = p.tfsh;
         } else if (p.tfsh < p.fsh) {
