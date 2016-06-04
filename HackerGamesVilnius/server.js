@@ -16,7 +16,7 @@ http.listen(listeningPort, function () { console.log('listening on *:' + listeni
 
 var maxPlayers = 10;
 var waitingForRound = 0;
-var roundWaitTime = 60;
+var roundWaitTime = 2;
 var timeOfStart = 0;
 
 var lastTime = Date.now();
@@ -32,10 +32,9 @@ setInterval(function () {
         // before the start of the game
         if (waitingForRound >= 2 && Date.now() > timeOfStart) {
             // start game
-            var game = new gameFn(io);
-            var inGameRoom = io.sockets.clients('game');
-            for (var i = inGameRoom.length; i--; ) {
-                var s = inGameRoom[i];
+            game = new gameFn(io);
+            for (var id in io.nsps['/'].adapter.rooms['game'].sockets) {
+                var s = io.sockets.connected[id];
                 s.game = game;
                 game.joined(s, s.id);
             }
@@ -72,7 +71,7 @@ io.on('connect', function (socket) {
             socket.emit('joinedRoom', null);
             if (waitingForRound >= 2) {
                 io.emit('timer', { inGame: false, time: roundWaitTime });
-                timeOfStart = Date.now() + roundWaitTime * 60;
+                timeOfStart = Date.now() + roundWaitTime * 1000;
             }
         }
     });

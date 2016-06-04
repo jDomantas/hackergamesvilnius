@@ -14,7 +14,6 @@ var app = playground( {
         
         this.waitingPlayers = 0;
         this.timer = 0;
-        this.isInLobby = true;
         this.hasJoinedGame = false;
         this.isGameRunning = false;
 
@@ -44,10 +43,13 @@ var app = playground( {
                 for (var i = data.length; i--; )
                     self.initPlayer(data[i]);
             }
+
+            console.log('got players');
         });
         
         self.socket.on('map', function (data) {
             self.map = data;
+            console.log('got map');
         });
         
         self.socket.on('self', function (id) {
@@ -82,7 +84,11 @@ var app = playground( {
         });
 
         self.socket.on('timer', function (data) {
+            console.log('got timer data: ' + JSON.stringify(data));
             self.isGameRunning = data.inGame;
+            if (self.isGameRunning && self.hasJoinedGame) {
+                $("#main_menu").hide();
+            }
             self.timer = data.time;
         });
 
@@ -107,13 +113,13 @@ var app = playground( {
     
     /* called each frame to update logic */
     step: function (dt) {
-        if (this.isGameRunning || (this.isInLobby && this.waitingPlayers >= 2)) {
+        if (this.isGameRunning || (this.waitingPlayers >= 2)) {
             this.timer -= dt;
             var time = Math.floor(this.timer);
             $("#timer").text("time left: " + time);
         }
         
-        if (!this.isInLobby && this.hasJoinedGame) {
+        if (this.isGameRunning && this.hasJoinedGame) {
             if (this.players && this.map && this.selfID)
                 for (var i = this.players.length; i--; ) {
                     this.updatePlayer(this.players[i], dt);
@@ -148,7 +154,7 @@ var app = playground( {
     render: function (dt) {
         this.layer.clear("#FF9000");
         
-        if (!this.isInLobby && this.hasJoinedGame) {
+        if (this.isGameRunning && this.hasJoinedGame) {
             this.renderGame(dt);
         } else {
             // display and update html ui
