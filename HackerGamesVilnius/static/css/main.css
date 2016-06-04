@@ -14,3 +14,17 @@
     width:100px; 
     background-color:lightgreen;
 }
+
+.timeLabel {
+    font-size: 30px;
+    font-family: Calibri;
+    color: white;
+}
+
+.hidden {
+    display: none;
+}
+
+.visible {
+    display: block;
+}

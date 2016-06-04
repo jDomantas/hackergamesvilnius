@@ -21,7 +21,12 @@ var app = playground( {
         var socket = io();
         var self = this;
         this.particles = [];
-        self.socket = socket;
+		self.socket = socket;
+		
+		setTimeout(function () {
+			$('#main_menu').removeClass('hidden');
+			$('#main_menu').addClass('visible');
+		}, 1250);
         
         $("#bbtn").click(function () { 
             socket.emit('joinGame', null);            
