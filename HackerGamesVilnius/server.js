@@ -20,6 +20,7 @@ var roundWaitTime = 60;
 var timeOfStart = 0;
 
 var lastTime = Date.now();
+
 setInterval(function () {
     if (game != null) {
         // game is currently running
