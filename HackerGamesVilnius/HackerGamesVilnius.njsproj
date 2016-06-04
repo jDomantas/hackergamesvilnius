@@ -31,15 +31,35 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="game.js" />
+    <Compile Include="static\script\bootstrap\bootstrap.js" />
+    <Compile Include="static\script\bootstrap\bootstrap.min.js" />
+    <Compile Include="static\script\bootstrap\npm.js" />
     <Compile Include="server.js" />
     <Compile Include="static\script\main.js" />
     <Compile Include="static\script\playground.js" />
     <Compile Include="static\script\shared\sim.js" />
+    <Content Include="static\css\bootstrap-theme.css" />
+    <Content Include="static\css\bootstrap-theme.css.map" />
+    <Content Include="static\css\bootstrap-theme.min.css" />
+    <Content Include="static\css\bootstrap-theme.min.css.map" />
+    <Content Include="static\css\bootstrap.css" />
+    <Content Include="static\css\bootstrap.css.map" />
+    <Content Include="static\css\bootstrap.min.css" />
+    <Content Include="static\css\bootstrap.min.css.map" />
+    <Content Include="static\fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="static\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="static\fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="static\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="static\fonts\glyphicons-halflings-regular.woff2" />
     <Content Include="package.json" />
     <Content Include="README.md" />
     <Content Include="static\index.html" />
+    <Content Include="static\css\main.css" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="static\css\" />
+    <Folder Include="static\fonts\" />
+    <Folder Include="static\script\bootstrap\" />
     <Folder Include="static\" />
     <Folder Include="static\images\" />
     <Folder Include="static\script\shared\" />

@@ -1,7 +1,9 @@
 "use strict";
 
-var app = playground({
-    
+var app = playground( {
+	
+	container: document.getElementById('playground_container'),
+
     /* silently preload assets before main loader */
     preload: function () { },
     

@@ -2,11 +2,23 @@
 <head>
     <meta charset="utf-8" />
     <title>Hacker Games Vilnius</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/main.css" rel="stylesheet" />
 </head>
 <body>
+    <div id="playground_container" class="pgCanvas">
+        <!--canvas to be generated here-->
+    </div>
+
+    <div id="main_menu" style="z-index:5;">
+        <div class="testSquare"></div>
+        <div id="clock">2016/06/04 07:54</div>
+    </div>
+
     <script src="script/shared/sim.js"></script>
     <script src="script/playground.js"></script>
     <script src="script/main.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="script/bootstrap/bootstrap.min.js"></script>
 </body>
 </html>
