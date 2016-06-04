@@ -260,8 +260,8 @@ var app = playground( {
 
     renderShip: function (s, dt) {
         var colorImage = this.images.enemycolor;
-        if (this.selfID === s.id) colorImage = this.images.selfcolor;
         if (this.selfTeam === s.team) colorImage = this.images.allycolor;
+        if (this.selfID === s.id) colorImage = this.images.selfcolor;
         
         this.layer.save().translate(s.vx, s.vy).rotate(s.vd);
         
