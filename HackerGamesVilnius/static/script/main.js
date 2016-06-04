@@ -271,7 +271,7 @@ var app = playground( {
         this.layer.save().translate(s.vx, s.vy).rotate(s.vd);
         
         var fireFrame = Math.floor(this.colorBlend * 10) % 24;
-        if ((s.x !== s.tx || s.y !== s.ty) && s.td === s.tdir) {
+        if ((s.x !== s.tx || s.y !== s.ty) && s.td === s.dir) {
             if (s.engines < 0.2)
                 this.layer.drawImage(this.images.smallfire[fireFrame % 4], -96, -50);
             else
@@ -343,8 +343,8 @@ var app = playground( {
 		if (player) {
 			this.camX = -this.clamp(player.vx - this.width / 2, 0, this.maxWidth - this.width);
 			this.camY = -this.clamp(player.vy - this.height / 2, 0, this.maxHeight - this.height);
-			this.layer.translate(this.camX, this.camY);
 		}
+		this.layer.translate(this.camX, this.camY);
         //this.layer.fillStyle("#FFFFFF").fillRect(100, 100, 200, 200);
 		
         this.layer.a(0.2).drawImage(this.images.bg, -100 + 100 * Math.cos(this.colorBlend / 10), -100 + 100 * Math.sin(this.colorBlend / 10), 3000, 3000).ra();
