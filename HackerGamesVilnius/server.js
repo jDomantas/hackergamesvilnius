@@ -64,11 +64,12 @@ io.on('connect', function (socket) {
             return;
 
         if (waitingForRound < maxPlayers && !socket.inGameRoom) {
+            console.log('player is joining');
             socket.join('game');
             socket.inGameRoom = true;
             waitingForRound += 1;
             io.emit('waitingCount', waitingForRound);
-            socket.emit('joined', null);
+            socket.emit('joinedRoom', null);
             if (waitingForRound >= 2) {
                 io.emit('timer', { inGame: false, time: roundWaitTime });
                 timeOfStart = Date.now() + roundWaitTime * 60;

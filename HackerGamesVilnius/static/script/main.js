@@ -23,6 +23,10 @@ var app = playground( {
         this.particles = [];
         self.socket = socket;
         
+        $(".btn").click(function () { 
+            socket.emit('joinGame', null);            
+        });
+
         self.socket.on('players', function (data) {
             var oldPlayers = self.players;
             self.players = data;
@@ -87,9 +91,11 @@ var app = playground( {
             // disable join button if count == 20, reenable otherwise
         });
 
-        self.socket.on('joined', function (_) {
+        self.socket.on('joinedRoom', function (_) {
             self.hasJoinedGame = true;
             // disable join button
+            $(".btn").prop('disabled', true);
+            console.log('joined!');
         });
     },
     
@@ -101,8 +107,11 @@ var app = playground( {
     
     /* called each frame to update logic */
     step: function (dt) {
-        if (this.isGameRunning || (this.isInLobby && this.waitingPlayers >= 2))
+        if (this.isGameRunning || (this.isInLobby && this.waitingPlayers >= 2)) {
             this.timer -= dt;
+            var time = Math.floor(this.timer);
+            $("#timer").text("time left: " + time);
+        }
         
         if (!this.isInLobby && this.hasJoinedGame) {
             if (this.players && this.map && this.selfID)
