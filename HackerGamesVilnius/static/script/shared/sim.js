@@ -16,13 +16,13 @@
         sim.resolveMapCollisions(p, obstacles);
         sim.resolvePlayerCollisions(p, players);
         
-        if (p.td === p.dir) {
+        if (p.td === p.dir && p.fly) {
             var dx = p.x - oldx;
             var dy = p.y - oldy;
             if (Math.abs(dx) + Math.abs(dy) > 0.005)
                 p.td = p.dir = Math.atan2(dy, dx);
         }
-
+        
         sim.updateSystems(p, dt);
     }
     
@@ -48,6 +48,7 @@
             } else {
                 p.x = p.tx;
                 p.y = p.ty;
+                p.fly = false;
             }
         }
     }
@@ -64,10 +65,10 @@
             if (dist < playerDiameter && dist > 0) {
                 dx /= dist;
                 dy /= dist;
-                p.x -= dx * 0.8 * (playerDiameter - dist);
-                p.y -= dy * 0.8 * (playerDiameter - dist);
-                o.x += dx * 0.2 * (playerDiameter - dist);
-                o.y += dy * 0.2 * (playerDiameter - dist);
+                p.x -= dx * 0.5 * (playerDiameter - dist);
+                p.y -= dy * 0.5 * (playerDiameter - dist);
+                o.x += dx * 0.5 * (playerDiameter - dist);
+                o.y += dy * 0.5 * (playerDiameter - dist);
             }
         }
 

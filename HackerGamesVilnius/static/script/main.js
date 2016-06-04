@@ -10,6 +10,7 @@ var app = playground( {
         
         var socket = io();
         var self = this;
+        this.particles = [];
         self.socket = socket;
         
         self.socket.on('players', function (data) {
@@ -51,6 +52,20 @@ var app = playground( {
                 }
             }
         });
+
+        self.socket.on('fire', function (data) {
+            for (var i = data.length; i--; ) {
+                var p = self.getPlayer(data[i].from);
+                var t = self.getPlayer(data[i].to);
+                for (var j = data[i].p; j >= 0; j -= 0.21) {
+                    var dx = (t.vx - p.vx) / 0.3;
+                    var dy = (t.vy - p.vy) / 0.3;
+                    dx += Math.random() * 1000 - 500;
+                    dx += Math.random() * 1000 - 500;
+                    self.particles.push({ x: p.vx, y: p.vy, dx: dx, dy: dy, t: 0.3, d: t });
+                }
+            }
+        })
     },
     
     /* called when main loader has finished	- you want to setState here */
@@ -65,6 +80,29 @@ var app = playground( {
             for (var i = this.players.length; i--; ) {
                 this.updatePlayer(this.players[i], dt);
             }
+
+        for (var i = this.particles.length; i--; ) {
+            this.updateParticle(this.particles[i], dt);
+            if (this.particles[i].t <= 0)
+                this.particles.splice(i, 1);
+        }
+    },
+    
+    updateParticle: function (p, dt) {
+        if (p.t < 0.01) {
+            p.t = 0;
+            return;
+        }
+        var part = dt / p.t;
+        if (part > 1)
+            part = 1;
+        var ndx = (p.d.vx - p.x) / p.t;
+        var ndy = (p.d.vy - p.y) / p.t;
+        p.dx = p.dx * (1 - part) + ndx * part;
+        p.dy = p.dy * (1 - part) + ndy * part;
+        p.x += p.dx * dt;
+        p.y += p.dy * dt;
+        p.t -= dt;
     },
     
     /* called each frame to update rendering */
@@ -74,6 +112,17 @@ var app = playground( {
         //this.layer.fillStyle("#FFFFFF").fillRect(100, 100, 200, 200);
         
         if (this.players) {
+            for (var i = this.particles.length; i--; ) {
+                var p = this.particles[i];
+                this.layer
+                    .strokeStyle('#f00')
+                    .lineWidth(2)
+                    .beginPath()
+                    .moveTo(p.x, p.y)
+                    .lineTo(p.x + p.dx / 100, p.y + p.dy / 100)
+                    .stroke();
+            }
+
             for (var i = this.players.length; i--; ) {
                 var p = this.players[i];
                 this.layer
