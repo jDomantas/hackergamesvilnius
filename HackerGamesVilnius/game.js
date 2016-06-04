@@ -94,8 +94,8 @@ Game.prototype.joined = function (socket, id) {
 
     var player = {
         id: id,
-        x: Math.random() * 500,
-        y: Math.random() * 500,
+        x: 0,
+        y: 0,
         tx: 0,
         ty: 0,
         dir: Math.random() * Math.PI * 2,
@@ -111,7 +111,10 @@ Game.prototype.joined = function (socket, id) {
         hp: 10,//000000, //10,
         fly: false,
         team: (t1c > t2c ? 2 : (t1c < t2c ? 1 : (Math.random() < 0.5 ? 1 : 2))),
-    };
+	};
+	
+	player.x = (player.team === 1) ? (Math.random() * this.spawnSize) : (sim.mapWidth - Math.random() * this.spawnSize);
+	player.y = (player.team === 1) ? (Math.random() * this.spawnSize) : (sim.mapHeight - Math.random() * this.spawnSize);
     
     this.localData[id] = {
         fireTimer: 0,
