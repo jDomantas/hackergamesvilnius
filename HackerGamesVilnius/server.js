@@ -78,18 +78,22 @@ io.on('connect', function (socket) {
         if (game !== null)
             return;
 
-        if (waitingForRound < maxPlayers && !socket.inGameRoom) {
-            console.log('player is joining');
-            socket.join('game');
-            socket.inGameRoom = true;
-            waitingForRound += 1;
-            io.emit('waitingCount', waitingForRound);
-            socket.emit('joinedRoom', null);
-            if (waitingForRound === 2) {
-                io.emit('timer', { inGame: false, time: roundWaitTime });
-                timeOfStart = Date.now() + roundWaitTime * 1000;
-            }
-        }
+		if (waitingForRound < maxPlayers && !socket.inGameRoom) {
+			console.log('player is joining');
+			socket.join('game');
+			socket.inGameRoom = true;
+			waitingForRound += 1;
+			io.emit('waitingCount', waitingForRound);
+			socket.emit('joinedRoom', null);
+			if (waitingForRound === 2) {
+				io.emit('timer', { inGame: false, time: roundWaitTime });
+				timeOfStart = Date.now() + roundWaitTime * 1000;
+			}
+		}
+		else if (waitingForRound >= maxPlayers && !socket.inGameRoom) {
+			console.log('player tried to join full lobby');
+			socket.emit('fullLobby', null);
+		}
     });
 
     socket.on('disconnect', function () {

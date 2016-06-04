@@ -192,7 +192,21 @@ var app = playground( {
             self.selfTeam = 0;
             self.selfID = null;
             self.players = null;
-        });
+		});
+
+		self.socket.on('fullLobby', function () {
+			console.log('tried to join full lobby');
+			$('#errorMsg').text('Lobby is full.');
+			$('#errorMsg').show('slow');
+			setTimeout(function () {
+				$('#errorMsg').hide('slow');
+				$('#errorMsg').text('');
+			}, 2000);
+			self.hasJoinedGame = false;
+			self.selfTeam = 0;
+			self.selfID = null;
+			self.players = null;
+		});
     },
     
     /* called when main loader has finished	- you want to setState here */
@@ -207,8 +221,7 @@ var app = playground( {
 		this.images.bigfire = [this.images.bigfire1, this.images.bigfire2, this.images.bigfire3, this.images.bigfire4];
 
 		setTimeout(function () {
-			$('#main_menu').removeClass('hidden');
-			$('#main_menu').addClass('visible');
+			$('#main_menu').show();
 		}, 1250);
     },
     
