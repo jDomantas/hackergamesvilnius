@@ -399,7 +399,7 @@ var app = playground( {
                         .save()
                         .translate(rock.x, rock.y)
                         .rotate(rock.rot)
-                        .drawImage(this.images.rocks[rock.tex], -rock.r / 2, -rock.r / 2, rock.r, rock.r)
+                        .drawImage(this.images.rocks[rock.tex], -rock.r, -rock.r, rock.r * 2, rock.r * 2)
                         .restore();
                 }
 			

@@ -14,7 +14,7 @@ function Game(io) {
     
     this.spawnSize = 500;
 
-    this.timeToEnd = 20;
+    this.timeToEnd = 200;
     this.nextFire = 0;
 
     this.localData = {};
@@ -33,26 +33,21 @@ Game.prototype.nearestObstacleDistSq = function (x, y, r) {
             bestDist = dist;
     }
     
-    if (x - r < this.spawnSize && y + r > sim.mapHeight - this.spawnSize)
-        return 0;
-    if (x + r > sim.mapWidth - this.spawnSize && y - r < this.spawnSize)
-        return 0;
-
     return bestDist;
 }
 
 Game.prototype.placeObstacles = function () {
-    this.obstacles.push({
-        x: Math.random() * sim.mapWidth, 
-        y: Math.random() * sim.mapHeight, 
-        r: Math.random() * 50 + 100
-    });
-
+   
     for (var i = 0; i < 1000; i++) {
         var pt = [Math.random() * sim.mapWidth, Math.random() * sim.mapHeight];
-        var radius = Math.random() * 50 + 100;
+        var radius = Math.random() * 50 + 50;
+        
+        if (pt[0] - radius < this.spawnSize && pt[1] - radius < this.spawnSize)
+            continue;
+        if (pt[0] + radius > sim.mapWidth - this.spawnSize && pt[1] + radius > sim.mapHeight - this.spawnSize)
+            continue;
 
-        if (this.nearestObstacleDistSq(pt[0], pt[1], radius) >= (200 + radius) * (200 + radius))
+        if (this.nearestObstacleDistSq(pt[0], pt[1], radius) >= (150 + radius) * (150 + radius))
             this.obstacles.push({ x: pt[0], y: pt[1], r: radius });
     }
 
@@ -60,8 +55,13 @@ Game.prototype.placeObstacles = function () {
         var pt = [Math.random() * sim.mapWidth, Math.random() * sim.mapHeight];
         var radius = Math.random() * 50 + 100;
         
+        if (pt[0] - radius < this.spawnSize && pt[1] - radius < this.spawnSize)
+            continue;
+        if (pt[0] + radius > sim.mapWidth - this.spawnSize && pt[1] + radius > sim.mapHeight - this.spawnSize)
+            continue;
+
         if (this.nearestObstacleDistSq(pt[0], pt[1]) >= 100 * 100 && 
-            (pt[0] + pt[1] < sim.mapWidth - this.spawnSize || pt[0] + pt[1] > sim.mapWidth + this.spawnSize))
+            (Math.abs(pt[0] - pt[1]) > sim.mapWidth / 2))
             this.obstacles.push({ x: pt[0], y: pt[1], r: radius });
     }
 
