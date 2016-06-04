@@ -20,6 +20,8 @@ function Game(io) {
 
 Game.prototype.moveTo = function (id, x, y) {
     var player = this.getPlayer(id);
+    if (!player || player.hp <= 0)
+        return;
     player.tx = x;
     player.ty = y;
     var dx = player.tx - player.x;
@@ -99,8 +101,9 @@ Game.prototype.getPlayer = function (id) {
     for (var i = this.players.length; i--; )
         if (this.players[i].id === id)
             return this.players[i];
-
-    throw new Error("player with id='" + id + "' was not found");
+    
+    return null;
+    //throw new Error("player with id='" + id + "' was not found");
 }
 
 Game.prototype.step = function (dt) {
@@ -143,7 +146,7 @@ Game.prototype.step = function (dt) {
 
 Game.prototype.systemPower = function (id, engines, guns, fshield, bshield) {
     var player = this.getPlayer(id);
-    if (player.hp <= 0)
+    if (!player || player.hp <= 0)
         return;
     
     player.tengines = engines;

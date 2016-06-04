@@ -18,7 +18,9 @@ var app = playground( {
             'damageoverlay1', 'damageoverlay2',
             'smallup1', 'smallup2', 'smallup3', 'smalldown1', 'smalldown2', 'smalldown3',
             'bigup1', 'bigup2', 'bigup3', 'bigdown1', 'bigdown2', 'bigdown3',
-            'bg');
+            'bg',
+            'smallfire1', 'smallfire2', 'smallfire3', 'smallfire4',
+            'midfire1', 'midfire2', 'midfire3', 'midfire4', 'midfire5', 'midfire6');
         
         this.selfTeam = 0;
         this.waitingPlayers = 0;
@@ -171,6 +173,9 @@ var app = playground( {
         this.images.smallup = [this.images.smallup1, this.images.smallup2, this.images.smallup3];
         this.images.bigdown = [this.images.bigdown1, this.images.bigdown2, this.images.bigdown3];
         this.images.bigup = [this.images.bigup1, this.images.bigup2, this.images.bigup3];
+        this.images.smallfire = [this.images.smallfire1, this.images.smallfire2, this.images.smallfire3, this.images.smallfire4];
+        this.images.midfire = [this.images.midfire1, this.images.midfire2, this.images.midfire3, 
+            this.images.midfire4, this.images.midfire5, this.images.midfire6];
     },
     
     /* called after container/window has been resized */
@@ -265,23 +270,15 @@ var app = playground( {
         
         this.layer.save().translate(s.vx, s.vy).rotate(s.vd);
         
-        this.layer.drawImage(this.images.gun1, -24 - (1 - this.weaponFunction(s.guns, 0)) * 7, -25);
-        this.layer.drawImage(this.images.gun2, -24 - (1 - this.weaponFunction(s.guns, 1)) * 7, -25);
-        this.layer.drawImage(this.images.gun3, -25 - (1 - this.weaponFunction(s.guns, 2)) * 10, -25);
-        this.layer.drawImage(this.images.gun4, -25 - (1 - this.weaponFunction(s.guns, 3)) * 10, -25);
+        var fireFrame = Math.floor(this.colorBlend * 10) % 24;
+        if ((s.x !== s.tx || s.y !== s.ty) && s.td === s.tdir) {
+            if (s.engines < 0.2)
+                this.layer.drawImage(this.images.smallfire[fireFrame % 4], -96, -50);
+            else
+                this.layer.drawImage(this.images.midfire[fireFrame % 6], -96, -50);
+        }
 
-        this.layer.drawImage(colorImage, -25, -25);
-        this.layer.a(Math.max(0, 1 - s.hp / 8)).drawImage(this.images.damageoverlay2, -25, -25).ra();
-        this.layer.drawImage(this.images.shipbase, -25, -25);
-        this.layer.a(Math.max(0, 1 - s.hp / 8)).drawImage(this.images.damageoverlay1, -25, -25).ra();
-        /* old shield rendering code:
-            this.layer
-                .beginPath()
-                .strokeStyle('#0af')
-                .lineWidth(s.fsh * 8)
-                .arc(0, 0, 35, -Math.PI / 2, +Math.PI / 2)
-                .stroke();
-        */
+
         var frame = Math.floor(this.shieldFrame * 10);
         if (frame >= 3) frame = 2;
         if (frame < 0) frame = 0;
@@ -296,7 +293,17 @@ var app = playground( {
                 this.layer.a(s.bsh * 2 - 1).drawImage(this.images.bigdown[frame], -50, -50).ra();
             this.layer.a(Math.min(1, s.bsh * 2)).drawImage(this.images.smalldown[frame], -50, -50).ra();
         }
-
+        
+        this.layer.drawImage(this.images.gun1, -24 - (1 - this.weaponFunction(s.guns, 0)) * 7, -25);
+        this.layer.drawImage(this.images.gun2, -24 - (1 - this.weaponFunction(s.guns, 1)) * 7, -25);
+        this.layer.drawImage(this.images.gun3, -25 - (1 - this.weaponFunction(s.guns, 2)) * 10, -25);
+        this.layer.drawImage(this.images.gun4, -25 - (1 - this.weaponFunction(s.guns, 3)) * 10, -25);
+        
+        this.layer.drawImage(colorImage, -25, -25);
+        this.layer.a(Math.max(0, 1 - s.hp / 8)).drawImage(this.images.damageoverlay2, -25, -25).ra();
+        this.layer.drawImage(this.images.shipbase, -25, -25);
+        this.layer.a(Math.max(0, 1 - s.hp / 8)).drawImage(this.images.damageoverlay1, -25, -25).ra();
+        
         this.layer.restore();
     },
 
