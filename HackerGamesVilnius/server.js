@@ -62,7 +62,7 @@ io.on('connect', function (socket) {
         if (game !== null)
             return;
 
-        if (waitingForRound < maxPlayers) {
+        if (waitingForRound < maxPlayers && !socket.inGameRoom) {
             socket.join('game');
             socket.inGameRoom = true;
             waitingForRound += 1;
