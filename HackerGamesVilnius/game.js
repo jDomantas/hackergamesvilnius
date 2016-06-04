@@ -11,6 +11,8 @@ function Game(io) {
     this.aimAngleWidth = 1;
     this.minFireDist = 30;
     this.maxFireDist = 250;
+
+    this.timeToEnd = 180;
 }
 
 Game.prototype.moveTo = function (id, x, y) {
@@ -52,7 +54,7 @@ Game.prototype.joined = function (socket, id) {
     socket.emit('map', this.obstacles);
 
     this.players.push(player);
-    this.io.emit('joined', player);
+    this.io.to('game').emit('joined', player);
 }
 
 Game.prototype.left = function (id) {
@@ -62,7 +64,7 @@ Game.prototype.left = function (id) {
             return;
         }
     
-    this.io.emit('left', id);
+    this.io.to('game').emit('left', id);
 }
 
 Game.prototype.getPlayer = function (id) {
@@ -75,6 +77,8 @@ Game.prototype.getPlayer = function (id) {
 
 Game.prototype.step = function (dt) {
     
+    this.timeToEnd -= dt;
+
     this.nextState -= dt;
     if (this.nextState < 0) {
         for (var i = this.players.length; i--; )
@@ -82,7 +86,7 @@ Game.prototype.step = function (dt) {
                 this.left(this.players[i].id);
 
         this.nextState += 0.3;
-        this.io.emit('players', this.players);
+        this.io.to('game').emit('players', this.players);
         this.updateGuns();
     }
 
@@ -148,7 +152,7 @@ Game.prototype.updateGuns = function () {
     }
 
     if (fired.length > 0) {
-        this.io.emit('fire', fired);
+        this.io.to('game').emit('fire', fired);
     }
 }
 
