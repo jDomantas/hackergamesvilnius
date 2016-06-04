@@ -12,7 +12,10 @@ function Game(io) {
     this.minFireDist = 30;
     this.maxFireDist = 250;
 
-    this.timeToEnd = 20;
+    this.timeToEnd = 40;
+    this.nextFire = 0;
+
+    this.localData = {};
 }
 
 Game.prototype.moveTo = function (id, x, y) {
@@ -26,6 +29,14 @@ Game.prototype.moveTo = function (id, x, y) {
 }
 
 Game.prototype.joined = function (socket, id) {
+    var t1c = 0;
+    var t2c = 0;
+    for (var i = this.players.length; i--;)
+        if (this.players[i].team === 1)
+            t1c += 1;
+        else
+            t2c += 1;
+
     var player = {
         id: id,
         x: Math.random() * 500,
@@ -44,7 +55,14 @@ Game.prototype.joined = function (socket, id) {
         tguns: 0.5,
         hp: 10,//000000, //10,
         fly: false,
+        team: (t1c > t2c ? 2 : (t1c < t2c ? 1 : (Math.random() < 0.5 ? 1 : 2))),
     };
+    
+    this.localData[id] = {
+        fireTimer: 0,
+        hpLoss: 0,
+    };
+
     player.tx = player.x;
     player.ty = player.y;
     player.td = player.dir;
@@ -91,18 +109,35 @@ Game.prototype.step = function (dt) {
 
     this.nextState -= dt;
     if (this.nextState < 0) {
-        for (var i = this.players.length; i--; )
-            if (this.players[i].hp <= 0)
-                this.dead(this.players[i].id);
-
         this.nextState += 0.3;
         this.io.to('game').emit('players', this.players);
-        this.updateGuns();
+    }
+    
+    this.nextFire -= dt;
+    if (this.nextFire < 0) {
+        for (var i = this.players.length; i--; ) {
+            var p = this.players[i];
+            var d = this.localData[p.id];
+            p.hp -= d.hpLoss;
+            d.hpLoss = 0;
+            if (p.hp <= 0)
+                this.dead(p.id);
+        }
+        
+        var fired = [];
+        for (var i = this.players.length; i--; )
+            this.updateGuns(this.players[i], fired);
+        
+        if (fired.length > 0)
+            this.io.to('game').emit('fire', fired);
+
+        this.nextFire += 0.3;
     }
 
     for (var i = this.players.length; i--; ) {
         var p = this.players[i];
         sim.updatePlayer(p, dt, this.players, this.obstacles);
+        this.localData[p.id].nextFire -= dt;
     }
 }
 
@@ -128,43 +163,41 @@ Game.prototype.systemPower = function (id, engines, guns, fshield, bshield) {
     if (player.tbsh > 1) player.tbsh = 1;
 }
 
-Game.prototype.updateGuns = function () {
-    var fired = [];
+Game.prototype.updateGuns = function (p, fired) {
+    if (this.localData[p.id].nextFire > 0)
+        return;
+
     for (var i = this.players.length; i--; ) {
-        for (var j = this.players.length; j--; ) {
-            var p = this.players[i];
-            var t = this.players[j];
-            var dx = t.x - p.x;
-            var dy = t.y - p.y;
-            if (Math.abs(dx) + Math.abs(dy) < 0.005)
-                continue;
-            var angle = Math.atan2(dy, dx);
-            angle -= p.dir;
-            while (angle < -Math.PI) angle += 2 * Math.PI;
-            while (angle > Math.PI) angle -= 2 * Math.PI;
-            if (Math.abs(angle) > this.aimAngleWidth / 2)
-                continue;
-            var dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < this.minFireDist || dist > this.maxFireDist)
-                continue;
-            
-            angle += p.dir;
-            angle -= t.dir;
-            while (angle < -Math.PI) angle += 2 * Math.PI;
-            while (angle > Math.PI) angle -= 2 * Math.PI;
-            var shield = (Math.abs(angle) < Math.PI / 2) ? t.bsh : t.fsh;
-            var damage = this.gunDamage(p) * this.shieldReduce(shield);
-            t.hp -= damage;
-            if (t.hp < 0)
-                t.hp = 0;
+        var t = this.players[i];
+        if (p.team === t.team)
+            continue;
+        var dx = t.x - p.x;
+        var dy = t.y - p.y;
+        if (Math.abs(dx) + Math.abs(dy) < 0.005)
+            continue;
+        var angle = Math.atan2(dy, dx);
+        angle -= p.dir;
+        while (angle < -Math.PI) angle += 2 * Math.PI;
+        while (angle > Math.PI) angle -= 2 * Math.PI;
+        if (Math.abs(angle) > this.aimAngleWidth / 2)
+            continue;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < this.minFireDist || dist > this.maxFireDist)
+            continue;
+        
+        angle += p.dir;
+        angle -= t.dir;
+        while (angle < -Math.PI) angle += 2 * Math.PI;
+        while (angle > Math.PI) angle -= 2 * Math.PI;
 
-            fired.push({ from: p.id, to: t.id, p: this.gunDamage(p) });
-            console.log(p.id + ' fired at ' + t.id + ', damage: ' + damage + ', shield: ' + shield);
-        }
-    }
+        var shield = (Math.abs(angle) < Math.PI / 2) ? t.bsh : t.fsh;
+        var damage = this.gunDamage(p) * this.shieldReduce(shield);
 
-    if (fired.length > 0) {
-        this.io.to('game').emit('fire', fired);
+        this.localData[t.id].hpLoss += damage;
+        this.localData[p.id].nextFire = 0.55;
+
+        fired.push({ from: p.id, to: t.id, p: this.gunDamage(p) });
+        return;
     }
 }
 

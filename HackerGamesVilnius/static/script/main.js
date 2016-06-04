@@ -10,8 +10,16 @@ var app = playground( {
     /* assets from preloader available, push some more for main loader */
     create: function () {
         
-        this.loadImages('guns', 'engines', 'fshield', 'bshield');
+        this.loadImages(
+            'guns', 'engines', 'fshield', 'bshield', 
+            'gun1', 'gun2', 'gun3', 'gun4', 
+            'selfcolor', 'allycolor', 'enemycolor', 
+            'shipbase',
+            'damageoverlay1', 'damageoverlay2',
+            'smallup1', 'smallup2', 'smallup3', 'smalldown1', 'smalldown2', 'smalldown3',
+            'bigup1', 'bigup2', 'bigup3', 'bigdown1', 'bigdown2', 'bigdown3');
         
+        this.selfTeam = 0;
         this.waitingPlayers = 0;
         this.timer = 0;
         this.hasJoinedGame = false;
@@ -23,10 +31,12 @@ var app = playground( {
 		
 		this.maxWidth = 2000;
 		this.maxHeight = 2000;
+        this.shieldFrame = 0;
 
         var socket = io();
         var self = this;
         this.particles = [];
+        this.weaponPositions = [-10, 10, -18, 18];
 		self.socket = socket;
 		
 		setTimeout(function () {
@@ -40,6 +50,11 @@ var app = playground( {
 
         self.socket.on('players', function (data) {
             var oldPlayers = self.players;
+            if (self.selfTeam === 0 && self.selfID) {
+                var ship = self.getPlayer(this.selfID);
+                if (ship)
+                    self.selfTeam = ship.team;
+            }
             self.players = data;
             if (oldPlayers) {
                 for (var i = oldPlayers.length; i--; ) {
@@ -98,13 +113,18 @@ var app = playground( {
                 var p = self.getPlayer(data[i].from);
                 var t = self.getPlayer(data[i].to);
                 if (!p || !t) continue;
-
-                for (var j = data[i].p; j >= 0; j -= 0.21) {
-                    var dx = (t.vx - p.vx) / 0.3;
-                    var dy = (t.vy - p.vy) / 0.3;
-                    dx += Math.random() * 1000 - 500;
-                    dx += Math.random() * 1000 - 500;
-                    self.particles.push({ x: p.vx, y: p.vy, dx: dx, dy: dy, t: 0.3, d: t });
+                
+                var particles = Math.floor(p.guns * 4 + 1);
+                if (particles < 1) particles = 1;
+                if (particles > 4) particles = 4;
+                var xx = Math.cos(p.vd);
+                var xy = Math.sin(p.vd);
+                var yx = -xy;
+                var yy = xx;
+                for (var j = 0; j < particles; j++) {
+                    var x = p.vx + xx * 23 + yx * self.weaponPositions[j];
+                    var y = p.vy + xy * 23 + yy * self.weaponPositions[j];
+                    self.particles.push({ x: x, y: y, dx: xx * 300, dy: xy * 300, t: 0.3, d: t });
                 }
             }
         });
@@ -144,13 +164,22 @@ var app = playground( {
     },
     
     /* called when main loader has finished	- you want to setState here */
-    ready: function () { },
+    ready: function () { 
+        this.images.smalldown = [this.images.smalldown1, this.images.smalldown2, this.images.smalldown3];
+        this.images.smallup = [this.images.smallup1, this.images.smallup2, this.images.smallup3];
+        this.images.bigdown = [this.images.bigdown1, this.images.bigdown2, this.images.bigdown3];
+        this.images.bigup = [this.images.bigup1, this.images.bigup2, this.images.bigup3];
+    },
     
     /* called after container/window has been resized */
     resize: function () { },
     
     /* called each frame to update logic */
     step: function (dt) {
+        this.shieldFrame += dt;
+        while (this.shieldFrame >= 0.3)
+            this.shieldFrame -= 0.3;
+
         if (this.isGameRunning || (this.waitingPlayers >= 2)) {
             this.timer -= dt;
             if (this.timer < 0)
@@ -218,6 +247,56 @@ var app = playground( {
         }
 	},
     
+    weaponFunction: function (power, index) {
+        if (index === 0) return 1;
+        var center = index * 0.25;
+        if (power > center + 0.05) return 1;
+        else if (power < center - 0.05) return 0;
+        else return (power - (center - 0.05)) / 0.1;
+    },
+
+    renderShip: function (s, dt) {
+        var colorImage = this.images.enemycolor;
+        if (this.selfID === s.id) colorImage = this.images.selfcolor;
+        if (this.selfTeam === s.team) colorImage = this.images.allycolor;
+        
+        this.layer.save().translate(s.vx, s.vy).rotate(s.vd);
+        
+        this.layer.drawImage(this.images.gun1, -25 - (1 - this.weaponFunction(s.guns, 0)) * 7, -25);
+        this.layer.drawImage(this.images.gun2, -25 - (1 - this.weaponFunction(s.guns, 1)) * 7, -25);
+        this.layer.drawImage(this.images.gun3, -25 - (1 - this.weaponFunction(s.guns, 2)) * 10, -25);
+        this.layer.drawImage(this.images.gun4, -25 - (1 - this.weaponFunction(s.guns, 3)) * 10, -25);
+
+        this.layer.drawImage(colorImage, -25, -25);
+        this.layer.a(Math.max(0, 1 - s.hp / 8)).drawImage(this.images.damageoverlay2, -25, -25).ra();
+        this.layer.drawImage(this.images.shipbase, -25, -25);
+        this.layer.a(Math.max(0, 1 - s.hp / 8)).drawImage(this.images.damageoverlay1, -25, -25).ra();
+        /* old shield rendering code:
+            this.layer
+                .beginPath()
+                .strokeStyle('#0af')
+                .lineWidth(s.fsh * 8)
+                .arc(0, 0, 35, -Math.PI / 2, +Math.PI / 2)
+                .stroke();
+        */
+        var frame = Math.floor(this.shieldFrame * 10);
+        if (frame >= 3) frame = 2;
+        if (frame < 0) frame = 0;
+
+        if (s.fsh > 0.01) {
+            if (s.fsh > 0.5)
+                this.layer.a(s.fsh * 2 - 1).drawImage(this.images.bigup[frame], -50, -50).ra();
+            this.layer.a(Math.min(1, s.fsh * 2)).drawImage(this.images.smallup[frame], -50, -50).ra();
+        }
+        if (s.bsh > 0.01) {
+            if (s.bsh > 0.5)
+                this.layer.a(s.bsh * 2 - 1).drawImage(this.images.bigdown[frame], -50, -50).ra();
+            this.layer.a(Math.min(1, s.bsh * 2)).drawImage(this.images.smalldown[frame], -50, -50).ra();
+        }
+
+        this.layer.restore();
+    },
+
     renderUI: function (image, y, power, target) {
         this.layer.drawImage(image, 0, y, 50, 50);
         this.layer
@@ -262,37 +341,11 @@ var app = playground( {
             }
             
             for (var i = this.players.length; i--; ) {
-                var p = this.players[i];
-                this.layer
-                    .save()
-                    .translate(p.vx, p.vy)
-                    .rotate(p.vd)
-                    .beginPath()
-                    .moveTo(25, 0)
-                    .lineTo(-20, 20)
-                    .lineTo(-20, -20)
-                    .closePath()
-                    .fillStyle('#000')
-                    .fill()
-                if (p.fsh > 0.01)
-                    this.layer
-                        .beginPath()
-                        .strokeStyle('#0af')
-                        .lineWidth(p.fsh * 8)
-                        .arc(0, 0, 35, -Math.PI / 2, +Math.PI / 2)
-                        .stroke();
-                if (p.bsh > 0.01)
-                    this.layer
-                        .beginPath()
-                        .strokeStyle('#0af')
-                        .lineWidth(p.bsh * 8)
-                        .arc(0, 0, 35, Math.PI / 2, Math.PI * 3 / 2)
-                        .stroke();
-                //.drawImage(this.images.ship, -this.images.ship.width / 2, -this.images.ship.height / 2)
-                this.layer.restore();
-                
+                this.renderShip(this.players[i], dt);                
                 //this.layer.fillStyle("#FFF").fillRect(p.x - 3, p.y - 3, 6, 6);
-			}
+            }
+            
+
 			
 			if (this.map)
 				for (var i = this.map.length; i--; )
@@ -308,9 +361,41 @@ var app = playground( {
                     this.renderUI(this.images.guns, 100, p.guns, p.tguns);
                     this.renderUI(this.images.engines, 150, p.engines, p.tengines);
                     this.layer.fillStyle('#000').font('30px Verdana').fillText('HP: ' + p.hp, 10, 250);
+
+                    this.layer
+                        .save()
+                        .a(0.1)
+                        .translate(p.vx, p.vy)
+                        .rotate(p.vd)
+                        .strokeStyle('#02B')
+                        .lineWidth(3)
+                        .beginPath()
+                        .arc(0, 0, 30, -0.5, 0.5)
+                        .lineTo(Math.cos(0.5) * 250, Math.sin(0.5) * 250)
+                        .moveTo(Math.cos(-0.5) * 250, Math.sin(-0.5) * 250)
+                        .arc(0, 0, 250, -0.5, 0.5)
+                        .moveTo(Math.cos(-0.5) * 250, Math.sin(-0.5) * 250)
+                        .lineTo(Math.cos(-0.5) * 30, Math.sin(-0.5) * 30)
+                        .closePath()
+                        .stroke()
+                        .ra()
+                        .restore();
                 }
             }
         }
+    },
+
+    getPlayer: function (id) {
+        if (!this.players)
+            return null;
+
+        for (var i = this.players.length; i--; )
+            if (this.players[i].id === id)
+                return this.players[i];
+        
+        return null;
+
+        throw new Error("can't find player with id: " + id);
     },
 
     /* initializes fields p.vx, p.vy, p.vdir */
