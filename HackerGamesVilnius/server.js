@@ -21,7 +21,7 @@ var timeOfStart = 0;
 
 var lastTime = Date.now();
 setInterval(function () {
-    if (game !== null) {
+    if (game != null) {
         // game is currently running
         var now = Date.now();
         var dt = (now - lastTime) / 1000.0;
@@ -48,6 +48,8 @@ io.on('connect', function (socket) {
     
     console.log("connected: " + socket.id + " from " + socket.handshake.address);
     
+    socket.inGameRoom = false;
+
     if (game !== null) {
         socket.emit('timer', { inGame: true, time: Math.floor(game.timeToEnd) });
     } else {
@@ -62,6 +64,7 @@ io.on('connect', function (socket) {
 
         if (waitingForRound < maxPlayers) {
             socket.join('game');
+            socket.inGameRoom = true;
             waitingForRound += 1;
             io.emit('waitingCount', waitingForRound);
             socket.emit('joined', null);
@@ -74,7 +77,7 @@ io.on('connect', function (socket) {
 
     socket.on('disconnect', function () {
         if (game === null) {
-            if (socket.rooms.indefOf('game') >= 0) {
+            if (socket.inGameRoom) {
                 waitingForRound -= 1;
                 io.emit('waitingCount', waitingForRound);
             }
