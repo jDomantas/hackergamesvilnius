@@ -64,18 +64,30 @@ var app = playground( {
             }
         });
         
-        self.socket.on('left', function (data) {
+        self.socket.on('left', function (id) {
             for (var i = 0; i < self.players.length; i++) {
-                if (self.players.id === data) {
+                if (self.players.id === id) {
                     self.players.splice(i, 1); //remove player from players list
                 }
             }
+        });
+        
+        self.socket.on('dead', function (id) {
+            for (var i = 0; i < self.players.length; i++) {
+                if (self.players.id === id) {
+                    self.players.splice(i, 1); //remove player from players list
+                }
+            }
+
+            // display some animation?
         });
 
         self.socket.on('fire', function (data) {
             for (var i = data.length; i--; ) {
                 var p = self.getPlayer(data[i].from);
                 var t = self.getPlayer(data[i].to);
+                if (!p || !t) continue;
+
                 for (var j = data[i].p; j >= 0; j -= 0.21) {
                     var dx = (t.vx - p.vx) / 0.3;
                     var dy = (t.vy - p.vy) / 0.3;
@@ -108,12 +120,15 @@ var app = playground( {
             console.log('joined!');
         });
 
-        self.socket.on('gameover', function (msg) {
+        self.socket.on('gameOver', function (msg) {
+            console.log('game over: ' + msg);
             self.gameOverMsg = msg;
+            self.isGameRunning = false;
             $("#bbtn").prop('disabled', false);
-            if (self.hasJoinedGame) {
-                $("#main_menu").display();
-            }
+            if (self.hasJoinedGame)
+                $("#main_menu").show();
+
+            self.hasJoinedGame = false;
         });
     },
     
@@ -127,6 +142,8 @@ var app = playground( {
     step: function (dt) {
         if (this.isGameRunning || (this.waitingPlayers >= 2)) {
             this.timer -= dt;
+            if (this.timer < 0)
+                this.timer = 0;
             var time = Math.floor(this.timer);
             if (!this.isGameRunning)
                 $("#timer").text(this.gameOverMsg + "Players joined: " + this.waitingPlayers + "/20, time to round: " + time);
@@ -241,11 +258,13 @@ var app = playground( {
             
             if (this.selfID) {
                 var p = this.getPlayer(this.selfID);
-                this.renderUI(this.images.fshield, 0, p.fsh, p.tfsh);
-                this.renderUI(this.images.bshield, 50, p.bsh, p.tbsh);
-                this.renderUI(this.images.guns, 100, p.guns, p.tguns);
-                this.renderUI(this.images.engines, 150, p.engines, p.tengines);
-                this.layer.fillStyle('#000').font('30px Verdana').fillText('HP: ' + this.getPlayer(this.selfID).hp, 10, 250);
+                if (p) {
+                    this.renderUI(this.images.fshield, 0, p.fsh, p.tfsh);
+                    this.renderUI(this.images.bshield, 50, p.bsh, p.tbsh);
+                    this.renderUI(this.images.guns, 100, p.guns, p.tguns);
+                    this.renderUI(this.images.engines, 150, p.engines, p.tengines);
+                    this.layer.fillStyle('#000').font('30px Verdana').fillText('HP: ' + p.hp, 10, 250);
+                }
             }
         }
         
@@ -258,6 +277,9 @@ var app = playground( {
         for (var i = this.players.length; i--; )
             if (this.players[i].id === id)
                 return this.players[i];
+        
+        if (id == this.selfID)
+            return null;
 
         throw new Error("can't find player with id: " + id);
     },
@@ -292,7 +314,12 @@ var app = playground( {
     keydown: function (data) {
         if (!this.selfID || !this.players)
             return;
+
         var p = this.getPlayer(this.selfID);
+
+        if (!p)
+            return;
+
         var settings = { engines: p.tengines, guns: p.tguns, fshield: p.tfsh, bshield: p.tbsh };
         if (data.key === 'q') settings.fshield = 1;
         if (data.key === 'a') settings.fshield = 0.5;
