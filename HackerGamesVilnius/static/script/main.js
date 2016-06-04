@@ -16,7 +16,13 @@ var app = playground( {
         this.timer = 0;
         this.hasJoinedGame = false;
         this.isGameRunning = false;
-        this.gameOverMsg = "";
+		this.gameOverMsg = "";
+		
+		this.camX = 0;
+		this.camY = 0;
+		
+		this.maxWidth = 2000;
+		this.maxHeight = 2000;
 
         var socket = io();
         var self = this;
@@ -170,7 +176,18 @@ var app = playground( {
                     this.particles.splice(i, 1);
             }
         }
-    },
+	},
+	
+	getPlayer: function (id) {
+		for (var i = this.players.length; i--; )
+			if (this.players[i].id === id)
+				return this.players[i];
+		
+		if (id == this.selfID)
+			return null;
+		
+		throw new Error("can't find player with id: " + id);
+	},
     
     updateParticle: function (p, dt) {
         if (p.t < 0.01) {
@@ -193,7 +210,8 @@ var app = playground( {
     render: function (dt) {
         this.layer.clear("#FF9000");
         
-        if (this.isGameRunning && this.hasJoinedGame) {
+		if (this.isGameRunning && this.hasJoinedGame) {
+			
             this.renderGame(dt);
         } else {
             // display and update html ui
@@ -210,12 +228,27 @@ var app = playground( {
             .fillStyle('#000')
             .fillRect(50 + target * 100 - 3, y + 10, 6, 30);
     },
-    
-    renderGame: function (dt) {
-        this.layer.clear("#FF9000");
-        
+	
+	clamp: function(value, min, max){
+	if (value < min) return min;
+	else if (value > max) return max;
+	return value;
+	},
+
+	renderGame: function (dt) {
+		this.layer.setTransform(1, 0, 0, 1, 0, 0);
+		this.layer.clear("#FF9000");
+
+		var player = this.getPlayer(this.selfID);
+		if (player) {
+			this.camX = -this.clamp(player.vx - this.width / 2, 0, this.maxWidth - this.width);
+			this.camY = -this.clamp(player.vy - this.height / 2, 0, this.maxHeight - this.height);
+			this.layer.translate(this.camX, this.camY);
+		}
         //this.layer.fillStyle("#FFFFFF").fillRect(100, 100, 200, 200);
-        
+		
+		
+
         if (this.players) {
             for (var i = this.particles.length; i--; ) {
                 var p = this.particles[i];
@@ -258,9 +291,15 @@ var app = playground( {
                 //.drawImage(this.images.ship, -this.images.ship.width / 2, -this.images.ship.height / 2)
                 this.layer.restore();
                 
-                this.layer.fillStyle("#FFF").fillRect(p.x - 3, p.y - 3, 6, 6);
-            }
-            
+                //this.layer.fillStyle("#FFF").fillRect(p.x - 3, p.y - 3, 6, 6);
+			}
+			
+			if (this.map)
+				for (var i = this.map.length; i--; )
+					this.layer.fillStyle('#F30').fillCircle(this.map[i].x, this.map[i].y, this.map[i].r);
+			
+			this.layer.setTransform(1, 0, 0, 1, 0, 0);
+
             if (this.selfID) {
                 var p = this.getPlayer(this.selfID);
                 if (p) {
@@ -272,21 +311,6 @@ var app = playground( {
                 }
             }
         }
-        
-        if (this.map)
-            for (var i = this.map.length; i--; )
-                this.layer.fillStyle('#F30').fillCircle(this.map[i].x, this.map[i].y, this.map[i].r);
-    },
-
-    getPlayer: function (id) {
-        for (var i = this.players.length; i--; )
-            if (this.players[i].id === id)
-                return this.players[i];
-        
-        if (id == this.selfID)
-            return null;
-
-        throw new Error("can't find player with id: " + id);
     },
 
     /* initializes fields p.vx, p.vy, p.vdir */
@@ -349,8 +373,8 @@ var app = playground( {
 	keyup: function(data) { },
 
 	/* pointers (mouse and touches) */
-    pointerdown: function (data) {
-		this.socket.emit('pointerdown', { x: data.x, y: data.y });
+	pointerdown: function (data) {
+		this.socket.emit('pointerdown', { x: data.x - this.camX, y: data.y - this.camY });
 	},
 	pointerup: function (data) { },
 	pointermove: function(data) { },
