@@ -17,7 +17,8 @@ var app = playground( {
             'shipbase',
             'damageoverlay1', 'damageoverlay2',
             'smallup1', 'smallup2', 'smallup3', 'smalldown1', 'smalldown2', 'smalldown3',
-            'bigup1', 'bigup2', 'bigup3', 'bigdown1', 'bigdown2', 'bigdown3');
+            'bigup1', 'bigup2', 'bigup3', 'bigdown1', 'bigdown2', 'bigdown3',
+            'bg');
         
         this.selfTeam = 0;
         this.waitingPlayers = 0;
@@ -32,6 +33,8 @@ var app = playground( {
 		this.maxWidth = 2000;
 		this.maxHeight = 2000;
         this.shieldFrame = 0;
+        this.colorBlend = 0;
+        this.bgColors = [[0x3B, 0x2B, 0x40], [0x5B, 0x41, 0x54], [0x28, 0x30, 0x67], [0x26, 0x50, 0x5E]];
 
         var socket = io();
         var self = this;
@@ -44,7 +47,7 @@ var app = playground( {
 			$('#main_menu').addClass('visible');
 		}, 1250);
         
-        $("#bbtn").click(function () { 
+        $("#bbtn").on('click touchstart', function () { 
             socket.emit('joinGame', null);            
         });
 
@@ -176,6 +179,7 @@ var app = playground( {
     
     /* called each frame to update logic */
     step: function (dt) {
+        this.colorBlend += dt;
         this.shieldFrame += dt;
         while (this.shieldFrame >= 0.3)
             this.shieldFrame -= 0.3;
@@ -262,8 +266,8 @@ var app = playground( {
         
         this.layer.save().translate(s.vx, s.vy).rotate(s.vd);
         
-        this.layer.drawImage(this.images.gun1, -25 - (1 - this.weaponFunction(s.guns, 0)) * 7, -25);
-        this.layer.drawImage(this.images.gun2, -25 - (1 - this.weaponFunction(s.guns, 1)) * 7, -25);
+        this.layer.drawImage(this.images.gun1, -24 - (1 - this.weaponFunction(s.guns, 0)) * 7, -25);
+        this.layer.drawImage(this.images.gun2, -24 - (1 - this.weaponFunction(s.guns, 1)) * 7, -25);
         this.layer.drawImage(this.images.gun3, -25 - (1 - this.weaponFunction(s.guns, 2)) * 10, -25);
         this.layer.drawImage(this.images.gun4, -25 - (1 - this.weaponFunction(s.guns, 3)) * 10, -25);
 
@@ -309,14 +313,25 @@ var app = playground( {
     },
 	
 	clamp: function(value, min, max){
-	if (value < min) return min;
-	else if (value > max) return max;
-	return value;
+	    if (value < min) return min;
+	    else if (value > max) return max;
+	    return value;
 	},
 
 	renderGame: function (dt) {
+        
+        var currentColor = Math.floor(this.colorBlend / 4) % this.bgColors.length;
+        var nextColor = (currentColor + 1) % this.bgColors.length;
+        var delta = this.colorBlend / 4 - Math.floor(this.colorBlend / 4);
+        delta = Math.cos(delta * Math.PI);
+        delta = (-delta + 1) / 2;
+        var res = [0, 0, 0];
+        res[0] = Math.round(this.bgColors[currentColor][0] * (1 - delta) + delta * this.bgColors[nextColor][0]);
+        res[1] = Math.round(this.bgColors[currentColor][1] * (1 - delta) + delta * this.bgColors[nextColor][1]);
+        res[2] = Math.round(this.bgColors[currentColor][2] * (1 - delta) + delta * this.bgColors[nextColor][2]);
+        this.layer.clear(cq.color(res));
+
 		this.layer.setTransform(1, 0, 0, 1, 0, 0);
-		this.layer.clear("#FF9000");
 
 		var player = this.getPlayer(this.selfID);
 		if (player) {
@@ -326,13 +341,13 @@ var app = playground( {
 		}
         //this.layer.fillStyle("#FFFFFF").fillRect(100, 100, 200, 200);
 		
-		
-
+        this.layer.a(0.2).drawImage(this.images.bg, -100 + 100 * Math.cos(this.colorBlend / 10), -100 + 100 * Math.sin(this.colorBlend / 10), 3000, 3000).ra();
+        
         if (this.players) {
             for (var i = this.particles.length; i--; ) {
                 var p = this.particles[i];
                 this.layer
-                    .strokeStyle('#f00')
+                    .strokeStyle('#722')
                     .lineWidth(2)
                     .beginPath()
                     .moveTo(p.x, p.y)
