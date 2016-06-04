@@ -21,7 +21,8 @@ var app = playground( {
             'bg', 'bg2',
             'smallfire1', 'smallfire2', 'smallfire3', 'smallfire4',
             'midfire1', 'midfire2', 'midfire3', 'midfire4', 'midfire5', 'midfire6',
-            'bigfire1', 'bigfire2', 'bigfire3', 'bigfire4');
+            'bigfire1', 'bigfire2', 'bigfire3', 'bigfire4',
+            'rock1', 'rock2', 'rock3');
         
         this.selfTeam = 0;
         this.waitingPlayers = 0;
@@ -33,8 +34,6 @@ var app = playground( {
 		this.camX = 0;
 		this.camY = 0;
 		
-		this.maxWidth = 2000;
-		this.maxHeight = 2000;
         this.shieldFrame = 0;
         this.colorBlend = 0;
         this.bgColors = [[0x3B, 0x2B, 0x40], [0x5B, 0x41, 0x54], [0x28, 0x30, 0x67], [0x26, 0x50, 0x5E]];
@@ -210,6 +209,7 @@ var app = playground( {
         this.images.midfire = [this.images.midfire1, this.images.midfire2, this.images.midfire3, 
             this.images.midfire4, this.images.midfire5, this.images.midfire6];
         this.images.bigfire = [this.images.bigfire1, this.images.bigfire2, this.images.bigfire3, this.images.bigfire4];
+        this.images.rocks = [this.images.rock1, this.images.rock2, this.images.rock3];
     },
     
     /* called after container/window has been resized */
@@ -366,8 +366,8 @@ var app = playground( {
 
 		var player = this.getPlayer(this.selfID);
 		if (player) {
-			this.camX = -this.clamp(player.vx - this.width / 2, 0, this.maxWidth - this.width);
-			this.camY = -this.clamp(player.vy - this.height / 2, 0, this.maxHeight - this.height);
+			this.camX = -this.clamp(player.vx - this.width / 2, 0, sim.mapWidth - this.width);
+			this.camY = -this.clamp(player.vy - this.height / 2, 0, sim.mapHeight - this.height);
 		}
 		this.layer.translate(this.camX, this.camY);
         //this.layer.fillStyle("#FFFFFF").fillRect(100, 100, 200, 200);
@@ -379,7 +379,7 @@ var app = playground( {
             for (var i = this.particles.length; i--; ) {
                 var p = this.particles[i];
                 this.layer
-                    .strokeStyle('#722')
+                    .strokeStyle('#F40')
                     .lineWidth(2)
                     .beginPath()
                     .moveTo(p.x, p.y)
@@ -392,11 +392,16 @@ var app = playground( {
                 //this.layer.fillStyle("#FFF").fillRect(p.x - 3, p.y - 3, 6, 6);
             }
             
-
-			
-			if (this.map)
-				for (var i = this.map.length; i--; )
-					this.layer.fillStyle('#F30').fillCircle(this.map[i].x, this.map[i].y, this.map[i].r);
+            if (this.map)
+                for (var i = this.map.length; i--; ) {
+                    var rock = this.map[i];
+                    this.layer
+                        .save()
+                        .translate(rock.x, rock.y)
+                        .rotate(rock.rot)
+                        .drawImage(this.images.rocks[rock.tex], -rock.r / 2, -rock.r / 2, rock.r, rock.r)
+                        .restore();
+                }
 			
             if (this.selfID) {
                 var p = this.getPlayer(this.selfID);

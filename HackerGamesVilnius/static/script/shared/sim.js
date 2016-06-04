@@ -7,8 +7,11 @@
     
     var systemPowerdownSpeed = 1;
     var systemPowerupSpeed = 0.15;
-
+    
     var sim = {};
+    
+    var mapWidth = sim.mapWidth = 2000;
+    var mapHeight = sim.mapHeight = 2000;
 
     sim.updatePlayer = function (p, dt, players, obstacles) {
         var oldx = p.x;
@@ -17,6 +20,15 @@
         sim.movePlayer(p, dt);
         sim.resolveMapCollisions(p, obstacles);
         sim.resolvePlayerCollisions(p, players);
+        
+        if (p.x < playerRadius)
+            p.x = playerRadius;
+        if (p.x > mapWidth - playerRadius)
+            p.x = mapWidth - playerRadius;
+        if (p.y < playerRadius)
+            p.y = playerRadius;
+        if (p.y > mapHeight - playerRadius)
+            p.y = mapHeight - playerRadius;
         
         if (p.td === p.dir && p.fly) {
             var dx = p.x - oldx;
@@ -77,6 +89,7 @@
     }
     
     sim.resolveMapCollisions = function (p, obstacles) {
+        
         for (var i = obstacles.length; i--; ) {
             var o = obstacles[i];
             var dx = o.x - p.x;

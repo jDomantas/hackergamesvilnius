@@ -5,17 +5,70 @@ var sim = require('./static/script/shared/sim.js');
 function Game(io) {
     this.io = io;
     this.players = [];
-    this.obstacles = [{ x: 800, y: 400, r: 200 }];
+    this.obstacles = []
     this.nextState = 0;
 
     this.aimAngleWidth = 0.8;
     this.minFireDist = 30;
     this.maxFireDist = 350;
+    
+    this.spawnSize = 500;
 
     this.timeToEnd = 20;
     this.nextFire = 0;
 
     this.localData = {};
+
+    this.placeObstacles();
+}
+
+Game.prototype.nearestObstacleDistSq = function (x, y, r) {
+    var bestDist = sim.mapWidth + sim.mapHeight;
+    bestDist *= bestDist;
+    for (var i = this.obstacles.length; i--; ) {
+        var dx = this.obstacles[i].x - x;
+        var dy = this.obstacles[i].y - y;
+        var dist = dx * dx + dy * dy;
+        if (dist < bestDist)
+            bestDist = dist;
+    }
+    
+    if (x - r < this.spawnSize && y + r > sim.mapHeight - this.spawnSize)
+        return 0;
+    if (x + r > sim.mapWidth - this.spawnSize && y - r < this.spawnSize)
+        return 0;
+
+    return bestDist;
+}
+
+Game.prototype.placeObstacles = function () {
+    this.obstacles.push({
+        x: Math.random() * sim.mapWidth, 
+        y: Math.random() * sim.mapHeight, 
+        r: Math.random() * 50 + 100
+    });
+
+    for (var i = 0; i < 1000; i++) {
+        var pt = [Math.random() * sim.mapWidth, Math.random() * sim.mapHeight];
+        var radius = Math.random() * 50 + 100;
+
+        if (this.nearestObstacleDistSq(pt[0], pt[1], radius) >= (200 + radius) * (200 + radius))
+            this.obstacles.push({ x: pt[0], y: pt[1], r: radius });
+    }
+
+    for (var i = 0; i < 100; i++) {
+        var pt = [Math.random() * sim.mapWidth, Math.random() * sim.mapHeight];
+        var radius = Math.random() * 50 + 100;
+        
+        if (this.nearestObstacleDistSq(pt[0], pt[1]) >= 100 * 100 && 
+            (pt[0] + pt[1] < sim.mapWidth - this.spawnSize || pt[0] + pt[1] > sim.mapWidth + this.spawnSize))
+            this.obstacles.push({ x: pt[0], y: pt[1], r: radius });
+    }
+
+    for (var i = this.obstacles.length; i--; ) {
+        this.obstacles[i].tex = Math.floor(Math.random() * 3);
+        this.obstacles[i].rot = Math.random() * Math.PI * 2;
+    }
 }
 
 Game.prototype.moveTo = function (id, x, y) {
