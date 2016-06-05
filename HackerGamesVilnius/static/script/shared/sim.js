@@ -156,11 +156,11 @@
     }
     
     sim.moveSpeed = function (p) {
-        return (50 + p.engines * 200);
+        return (125 + p.engines * 125);
     }
     
     sim.turnSpeed = function (p) {
-        return sim.moveSpeed(p) / 50;
+        return Math.exp(p.engines * 4);
     }
 
     if (typeof exports !== 'undefined') {
