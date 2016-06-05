@@ -78,18 +78,22 @@ io.on('connect', function (socket) {
         if (game !== null)
             return;
 
-        if (waitingForRound < maxPlayers && !socket.inGameRoom) {
-            console.log('player is joining');
-            socket.join('game');
-            socket.inGameRoom = true;
-            waitingForRound += 1;
-            io.emit('waitingCount', waitingForRound);
-            socket.emit('joinedRoom', null);
-            if (waitingForRound === 2) {
-                io.emit('timer', { inGame: false, time: roundWaitTime });
-                timeOfStart = Date.now() + roundWaitTime * 1000;
-            }
-        }
+		if (waitingForRound < maxPlayers && !socket.inGameRoom) {
+			console.log('player is joining');
+			socket.join('game');
+			socket.inGameRoom = true;
+			waitingForRound += 1;
+			io.emit('waitingCount', waitingForRound);
+			socket.emit('joinedRoom', null);
+			if (waitingForRound === 2) {
+				io.emit('timer', { inGame: false, time: roundWaitTime });
+				timeOfStart = Date.now() + roundWaitTime * 1000;
+			}
+		}
+		else if (waitingForRound >= maxPlayers && !socket.inGameRoom) {
+			console.log('player tried to join full lobby');
+			socket.emit('fullLobby', null);
+		}
     });
 
     socket.on('disconnect', function () {
@@ -117,13 +121,11 @@ io.on('connect', function (socket) {
     });
 
     socket.on('power', function (data) {
-        if (socket.game) {
-            if (typeof data === 'object' && 
-                typeof data.engines === 'number' && 
-                typeof data.guns === 'number' && 
-                typeof data.fshield === 'number' && 
-                typeof data.bshield === 'number')
-                socket.game.systemPower(socket.id, data.engines, data.guns, data.fshield, data.bshield);
+		if (socket.game) {
+			if (typeof data === 'object' &&
+				typeof data.system === 'string' && 
+                typeof data.value === 'number')
+                socket.game.systemPower(socket.id, data.system, data.value);
         }
     });
 });
