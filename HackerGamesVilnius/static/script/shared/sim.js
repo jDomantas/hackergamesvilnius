@@ -2,7 +2,7 @@
 
 (function (root) {
     
-    var playerRadius = 20;
+    var playerRadius = 25;
     var playerDiameter = 2 * playerRadius;
 	
 	var mapWidth = 2000;
@@ -20,8 +20,12 @@
 	var sim = {};
 	sim.maxSystemPower = maxSystemPower;
 	sim.mapWidth = mapWidth;
-	sim.mapHeight = mapHeight;
-
+    sim.mapHeight = mapHeight;
+    
+    sim.aimAngleWidth = 1;
+    sim.minFireDist = 70;
+    sim.maxFireDist = 350;
+    
     sim.updatePlayer = function (p, dt, players, obstacles) {
         var oldx = p.x;
         var oldy = p.y;
@@ -61,6 +65,7 @@
             if (deltadir > s) p.dir += s;
             else if (deltadir < -s) p.dir -= s;
             else p.dir = p.td;
+            p.d = 0;
         } else {
             var dx = p.tx - p.x;
             var dy = p.ty - p.y;
@@ -68,10 +73,12 @@
             if (dist > speed * dt) {
                 p.x += dx / dist * speed * dt;
                 p.y += dy / dist * speed * dt;
+                p.d += dist * dt;
             } else {
                 p.x = p.tx;
                 p.y = p.ty;
                 p.fly = false;
+                p.d = 0;
             }
         }
     }
@@ -92,11 +99,80 @@
                 p.y -= dy * 0.5 * (playerDiameter - dist);
                 o.x += dx * 0.5 * (playerDiameter - dist);
                 o.y += dy * 0.5 * (playerDiameter - dist);
+                
+                /*if (sim.server && p.team !== o.team) {
+                    if (p.d > playerRadius * 4 || o.d > playerRadius * 4) {
+                        console.log('checking ' + p.id + ' with ' + o.id);
+
+                        var p_vx = p.tx - p.x;
+                        var p_vy = p.ty - p.y;
+                        var p_d = Math.sqrt(p_vx * p_vx + p_vy * p_vy);
+                        if (p_d < 0.001 || p.d < playerRadius) {
+                            p_vx = p_vy = 0;
+                        } else {
+                            p_vx /= p_d;
+                            p_vy /= p_d;
+                        }
+                        
+                        var o_vx = o.tx - o.x;
+                        var o_vy = o.ty - o.y;
+                        var o_d = Math.sqrt(o_vx * o_vx + o_vy * o_vy);
+                        if (o_d < 0.001 || o.d < playerRadius) {
+                            o_vx = o_vy = 0;
+                        } else {
+                            o_vx /= o_d;
+                            o_vy /= o_d;
+                        }
+                        
+                        p_vx *= this.moveSpeed(p);
+                        p_vy *= this.moveSpeed(p);
+                        o_vx *= this.moveSpeed(o);
+                        o_vy *= this.moveSpeed(o);
+                        
+                        var dot = vx * dx + vy * dy;
+                        var angle = Math.acos(dot / s);
+                        if (angle > Math.PI / 4)
+                            continue;
+                        
+                        // velocity difference
+                        var vx = o_vx - p_vx;
+                        var vy = o_vy - p_vy;
+                        var s = Math.sqrt(vx * vx + vy * vy);
+                        if (s < 160)
+                            continue;
+                        
+                        var damage = (s - 100) / 70;
+                        
+                        console.log('s = ' + s + ', damage = ' + damage);
+
+                        var pdamage = damage * this.calculateShields(p, dx, dy);
+                        var odamage = damage * this.calculateShields(o, -dx, -dy);
+                        
+                        p.hp -= pdamage;
+                        o.hp -= odamage;
+                        p.d = o.d = 0;
+
+                    } else {
+                        p.d = o.d = 0;
+                    }
+                }*/
             }
         }
 
     }
     
+    sim.calculateShields = function (p, sx, sy) {
+        if (Math.abs(sx) + Math.abs(sy) < 0.005)
+            return 1;
+
+        var angle = Math.atan2(sy, sx);
+        angle -= p.dir;
+        while (angle < -Math.PI) angle += 2 * Math.PI;
+        while (angle > Math.PI) angle -= 2 * Math.PI;
+        
+        return this.shieldReduce((Math.abs(angle) > Math.PI / 2) ? p.bsh : p.fsh);
+    }
+
     sim.resolveMapCollisions = function (p, obstacles) {
         
         for (var i = obstacles.length; i--; ) {
@@ -109,6 +185,7 @@
                 dy /= dist;
                 p.x -= dx * (playerRadius + o.r - dist);
                 p.y -= dy * (playerRadius + o.r - dist);
+                p.d = 0;
             }
         }
     }
@@ -162,12 +239,18 @@
     sim.turnSpeed = function (p) {
         return Math.exp(p.engines * 4);
     }
+    
+    sim.shieldReduce = function (power) {
+        return 1 - power * 0.75;
+    }
 
     if (typeof exports !== 'undefined') {
         if (typeof module !== 'undefined' && module.exports)
             module.exports = sim;
         exports.sim = sim;
+        sim.server = true;
     } else {
         window.sim = sim;
+        sim.server = false;
     }
 }).call(this);
