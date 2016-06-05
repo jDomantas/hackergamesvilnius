@@ -16,7 +16,8 @@
 }
 
 .timeLabel {
-    font-size: 30px;
+    font-size: 50px;
     font-family: Calibri;
     color: white;
+    display: inline-block;
 }
