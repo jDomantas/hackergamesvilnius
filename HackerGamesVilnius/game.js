@@ -10,13 +10,7 @@ function Game(io) {
 	
 	this.spawnSize = 500;
 
-    this.aimAngleWidth = 0.8;
-    this.minFireDist = 30;
-    this.maxFireDist = 350;
-    
-    this.spawnSize = 500;
-
-    this.timeToEnd = 200;
+    this.timeToEnd = 120;
     this.nextFire = 0;
 
     this.localData = {};
@@ -63,7 +57,7 @@ Game.prototype.placeObstacles = function () {
             continue;
 
         if (this.nearestObstacleDistSq(pt[0], pt[1]) >= 100 * 100 && 
-            (Math.abs(pt[0] - pt[1]) > sim.mapWidth / 2))
+            (Math.abs(pt[0] - pt[1]) > this.spawnSize + radius))
             this.obstacles.push({ x: pt[0], y: pt[1], r: radius });
     }
 
@@ -113,6 +107,7 @@ Game.prototype.joined = function (socket, id) {
         hp: 10,//000000, //10,
         fly: false,
         team: (t1c > t2c ? 2 : (t1c < t2c ? 1 : (Math.random() < 0.5 ? 1 : 2))),
+        d: 0,
 	};
 	
 	player.x = (player.team === 1) ? (Math.random() * this.spawnSize) : (sim.mapWidth - Math.random() * this.spawnSize);
@@ -200,6 +195,10 @@ Game.prototype.step = function (dt) {
         sim.updatePlayer(p, dt, this.players, this.obstacles);
         this.localData[p.id].nextFire -= dt;
     }
+    
+    for (var i = this.players.length; i--; )
+        if (this.players[i].hp <= 0)
+            this.dead(this.players[i].id);
 }
 
 Game.prototype.systemPower = function (id, system, value) {
@@ -279,10 +278,10 @@ Game.prototype.updateGuns = function (p, fired) {
         angle -= p.dir;
         while (angle < -Math.PI) angle += 2 * Math.PI;
         while (angle > Math.PI) angle -= 2 * Math.PI;
-        if (Math.abs(angle) > this.aimAngleWidth / 2)
+        if (Math.abs(angle) > sim.aimAngleWidth / 2)
             continue;
         var dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < this.minFireDist || dist > this.maxFireDist)
+        if (dist < sim.minFireDist || dist > sim.maxFireDist)
             continue;
         
         angle += p.dir;

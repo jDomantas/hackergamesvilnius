@@ -1,7 +1,8 @@
 "use strict";
 
 var app = playground({
-	
+    
+    //smoothing: false,
 	//container: document.getElementById('playground_container'),
 	
 	/* silently preload assets before main loader */
@@ -22,26 +23,32 @@ var app = playground({
             'smallfire1', 'smallfire2', 'smallfire3', 'smallfire4',
             'midfire1', 'midfire2', 'midfire3', 'midfire4', 'midfire5', 'midfire6',
             'bigfire1', 'bigfire2', 'bigfire3', 'bigfire4',
-            'rock1', 'rock2', 'rock3');
+            'rock1', 'rock2', 'rock3',
+            'border1', 'border2', 'border3', 'counter', 'energybar', 'energybarempty', 'energybarend', 'limitenergy');
 		
 		this.selfTeam = 0;
 		this.waitingPlayers = 0;
 		this.timer = 0;
 		this.hasJoinedGame = false;
 		this.isGameRunning = false;
-		this.gameOverMsg = "";
+        this.gameOverMsg = "";
+        this.barWidth = 100;
+        this.barHeight = 50;
 		
 		this.camX = 0;
 		this.camY = 0;
 		
-		this.shieldFrame = 0;
-		this.colorBlend = 0;
-		this.bgColors = [[0x3B, 0x2B, 0x40], [0x5B, 0x41, 0x54], [0x28, 0x30, 0x67], [0x26, 0x50, 0x5E]];
-		
-		var socket = io();
-		var self = this;
-		this.particles = [];
-		this.weaponPositions = [-10, 10, -18, 18];
+        this.shieldFrame = 0;
+        this.colorBlend = 0;
+        this.bgColors = [[0x3B, 0x2B, 0x40], [0x5B, 0x41, 0x54], [0x28, 0x30, 0x67], [0x26, 0x50, 0x5E]];
+        for (var i = this.bgColors.length; i--; )
+            for (var j = this.bgColors[i].length; j--; )
+                this.bgColors[i][j] = Math.floor(this.bgColors[i][j] * 0.4);
+
+        var socket = io();
+        var self = this;
+        this.particles = [];
+        this.weaponPositions = [-10, 10, -18, 18];
 		self.socket = socket;
 		
 		$("#bbtn").on('click touchstart', function () {
@@ -235,7 +242,7 @@ var app = playground({
         this.shieldFrame += dt;
         while (this.shieldFrame >= 0.3)
             this.shieldFrame -= 0.3;
-
+        
 		if (this.isGameRunning || (this.waitingPlayers >= 2)) {
 			if(this.timer > 0)
 				this.timer -= dt;
@@ -348,16 +355,38 @@ var app = playground({
         
         this.layer.restore();
     },
+    
+    drawBar: function (x, y, width, fill, aim, max) {
+        this.layer.drawImage(this.images.energybarempty, x, y, width, 60);
+        
+        max = Math.round(max * width);
+        if (max < width) {
+            this.layer.drawImage(this.images.limitenergy, x + max, y, width - max, 60);
+        }
+        
+        fill = Math.round(fill * width);
+        this.layer.drawImage(this.images.energybar, x, y, fill, 60);
+        
+        aim = Math.round(aim * width);
 
-    renderUI: function (image, y, power, target) {
-        this.layer.drawImage(image, 0, y, 50, 50);
-        this.layer
-            .fillStyle('#666')
-            .fillRect(50, y + 20, 100, 10)
-            .fillStyle('#333')
-            .fillRect(50, y + 15, power * 100, 20)
-            .fillStyle('#000')
-            .fillRect(50 + target * 100 - 3, y + 10, 6, 30);
+        this.layer.drawImage(this.images.border2, x, y, width, 60);
+        this.layer.drawImage(this.images.border1, x + 1 - this.images.border1.width, y);
+        this.layer.drawImage(this.images.border3, x + width - 1, y);
+        this.layer.drawImage(this.images.energybarend, x + aim - Math.round(this.images.energybarend.width / 2), y);
+    },
+
+    renderUI: function (p) {
+        this.layer.drawImage(this.images.fshield, 0, this.barHeight * 0.5 - 25);
+        this.layer.drawImage(this.images.bshield, 0, this.barHeight * 1.5 - 25);
+        this.layer.drawImage(this.images.guns, 0, this.barHeight * 2.5 - 25);
+        this.layer.drawImage(this.images.engines, 0, this.barHeight * 3.5 - 25);
+        
+        var freeEnergy = sim.maxSystemPower - p.tfsh - p.tbsh - p.tguns - p.tengines;
+
+        this.drawBar(60, this.barHeight * 0.5 - 30, this.barWidth, p.fsh, p.tfsh, p.tfsh + freeEnergy);
+        this.drawBar(60, this.barHeight * 1.5 - 30, this.barWidth, p.bsh, p.tbsh, p.tbsh + freeEnergy);
+        this.drawBar(60, this.barHeight * 2.5 - 30, this.barWidth, p.guns, p.tguns, p.tguns + freeEnergy);
+        this.drawBar(60, this.barHeight * 3.5 - 30, this.barWidth, p.engines, p.tengines, p.tengines + freeEnergy);
     },
 	
 	clamp: function(value, min, max){
@@ -379,19 +408,33 @@ var app = playground({
         res[2] = Math.round(this.bgColors[currentColor][2] * (1 - delta) + delta * this.bgColors[nextColor][2]);
 		this.layer.clear(cq.color(res));
 		//end background
+        
+        this.barWidth = (this.width - 70) / 3;
+        if (this.barWidth < 300)
+            this.barWidth = 300;
+        this.barWidth = this.clamp(this.barWidth, 50, this.width - 70);
+        if (this.width < this.height)
+            this.barWidth = this.width - 70;
 
 		this.layer.setTransform(1, 0, 0, 1, 0, 0);
 
 		var player = this.getPlayer(this.selfID);
-		if (player) {
+        if (player) {
+            var height = this.height;
+            var miny = 0;
+            if (this.width < this.height) {
+                this.barHeight = this.clamp((this.height - this.width) / 4, 50, 80);
+                height = this.height - this.barHeight * 4;
+                miny = -this.barHeight * 4;
+            }
 			this.camX = -this.clamp(player.vx - this.width / 2, 0, sim.mapWidth - this.width);
-			this.camY = -this.clamp(player.vy - this.height / 2, 0, sim.mapHeight - this.height);
+            this.camY = -this.clamp(player.vy - height / 2 + miny, miny, sim.mapHeight - this.height);
 		}
 		this.layer.translate(this.camX, this.camY);
 		//sets camera pos
 		
-        this.layer.a(0.2).drawImage(this.images.bg, -100 + 100 * Math.cos(this.colorBlend / 10), -100 + 100 * Math.sin(this.colorBlend / 10), 2200, 2200).ra();
-        this.layer.a(0.2).drawImage(this.images.bg2, -100 + 100 * Math.cos(this.colorBlend / 10 * Math.Pi + 3), -100 + 50 * Math.sin(this.colorBlend / 10 * 2), 2200, 2200).ra();
+        this.layer.a(0.4).drawImage(this.images.bg, -100 + 100 * Math.cos(this.colorBlend / 10), -600 + 100 * Math.sin(this.colorBlend / 10), 3000, 3000).ra();
+        this.layer.a(0.4).drawImage(this.images.bg2, -100 + 100 * Math.cos(this.colorBlend / 10 * Math.Pi + 3), -600 + 50 * Math.sin(this.colorBlend / 10 * 2), 3000, 3000).ra();
         
         if (this.players) {
             for (var i = this.particles.length; i--; ) {
@@ -425,18 +468,18 @@ var app = playground({
                 if (p) {
                     this.layer
                         .save()
-                        .a(0.1)
+                        .a(0.2)
                         .translate(p.vx, p.vy)
                         .rotate(p.vd)
                         .strokeStyle('#02B')
                         .lineWidth(3)
                         .beginPath()
-                        .arc(0, 0, 30, -0.4, 0.5)
-                        .lineTo(Math.cos(0.4) * 350, Math.sin(0.4) * 350)
-                        .moveTo(Math.cos(-0.4) * 350, Math.sin(-0.4) * 350)
-                        .arc(0, 0, 350, -0.4, 0.4)
-                        .moveTo(Math.cos(-0.4) * 350, Math.sin(-0.4) * 350)
-                        .lineTo(Math.cos(-0.4) * 30, Math.sin(-0.4) * 30)
+                        .arc(0, 0, sim.minFireDist, -sim.aimAngleWidth / 2, sim.aimAngleWidth / 2)
+                        .lineTo(Math.cos(sim.aimAngleWidth / 2) * sim.maxFireDist, Math.sin(sim.aimAngleWidth / 2) * sim.maxFireDist)
+                        .moveTo(Math.cos(-sim.aimAngleWidth / 2) * sim.maxFireDist, Math.sin(-sim.aimAngleWidth / 2) * sim.maxFireDist)
+                        .arc(0, 0, sim.maxFireDist, -sim.aimAngleWidth / 2, sim.aimAngleWidth / 2)
+                        .moveTo(Math.cos(-sim.aimAngleWidth / 2) * sim.maxFireDist, Math.sin(-sim.aimAngleWidth / 2) * sim.maxFireDist)
+                        .lineTo(Math.cos(-sim.aimAngleWidth / 2) * sim.minFireDist, Math.sin(-sim.aimAngleWidth / 2) * sim.minFireDist)
                         .closePath()
                         .stroke()
                         .ra()
@@ -449,12 +492,8 @@ var app = playground({
             if (this.selfID) {
                 var p = this.getPlayer(this.selfID);
                 if (p) {
-                    this.renderUI(this.images.fshield, 0, p.fsh, p.tfsh);
-                    this.renderUI(this.images.bshield, 50, p.bsh, p.tbsh);
-                    this.renderUI(this.images.guns, 100, p.guns, p.tguns);
-                    this.renderUI(this.images.engines, 150, p.engines, p.tengines);
+                    this.renderUI(p);
                     this.layer.fillStyle('#000').font('30px Verdana').fillText('HP: ' + p.hp, 10, 250);
-
                 }
             }
 
@@ -575,18 +614,29 @@ var app = playground({
 	/* pointers (mouse and touches) */
 	pointerdown: function (data) {
 		if (this.isGameRunning === true) {
-			if (data.x < 150 && data.x > 50 && data.y < 185 && data.y > 15) { //click on slider part
-				if (data.y > 15 && data.y < 35) {
-					this.socket.emit('power', { system: 'fshield', value: (data.x - 50) / 100 });
+            if (data.x < this.barWidth + 80 && data.y < this.barHeight * 4) { //click on slider part
+                var val = (data.x - 60) / this.barWidth;
+                if (val < 0) val = 0;
+                if (val > 1) val = 1;
+                var p = null;
+                if (this.selfID)
+                    p = this.getPlayer(this.selfID);
+
+				if (data.y > 0 && data.y <= this.barHeight) {
+                    this.socket.emit('power', { system: 'fshield', value: val });
+                    p.tfsh = val;
 				}
-				if (data.y > 65 && data.y < 85) {
-					this.socket.emit('power', { system: 'bshield', value: (data.x - 50) / 100 });
+				if (data.y > this.barHeight && data.y <= this.barHeight * 2) {
+					this.socket.emit('power', { system: 'bshield', value: val });
+                    p.tbsh = val;
 				}
-				if (data.y > 115 && data.y < 135) {
-					this.socket.emit('power', { system: 'guns', value: (data.x - 50) / 100 });
+				if (data.y > this.barHeight * 2&& data.y <= this.barHeight * 3) {
+					this.socket.emit('power', { system: 'guns', value: val });
+                    p.tguns = val;
 				}
-				if (data.y > 165 && data.y < 185) {
-					this.socket.emit('power', { system: 'engines', value: (data.x - 50) / 100 });
+				if (data.y > this.barHeight * 3 && data.y <= this.barHeight * 4) {
+					this.socket.emit('power', { system: 'engines', value: val });
+                    p.tengines = val;
 				}
 			}
 			else {
@@ -595,7 +645,38 @@ var app = playground({
 		}
 	},
 	pointerup: function (data) { },
-	pointermove: function(data) { },
+    pointermove: function (data) {
+        if (!this.mouse.left && !this.mouse.right && !this.mouse.middle && !data.touch)
+            return;
+
+        if (this.isGameRunning === true) {
+            if (data.x < this.barWidth + 80 && data.y < this.barHeight * 4) { //click on slider part
+                var val = (data.x - 60) / this.barWidth;
+                if (val < 0) val = 0;
+                if (val > 1) val = 1;
+                var p = null;
+                if (this.selfID)
+                    p = this.getPlayer(this.selfID);
+                
+                if (data.y > 0 && data.y <= this.barHeight) {
+                    this.socket.emit('power', { system: 'fshield', value: val });
+                    p.tfsh = val;
+                }
+                if (data.y > this.barHeight && data.y <= this.barHeight * 2) {
+                    this.socket.emit('power', { system: 'bshield', value: val });
+                    p.tbsh = val;
+                }
+                if (data.y > this.barHeight * 2 && data.y <= this.barHeight * 3) {
+                    this.socket.emit('power', { system: 'guns', value: val });
+                    p.tguns = val;
+                }
+                if (data.y > this.barHeight * 3 && data.y <= this.barHeight * 4) {
+                    this.socket.emit('power', { system: 'engines', value: val });
+                    p.tengines = val;
+                }
+            }
+        }
+    },
 
 	/* mouse trap */
 	mousedown: function (data) { },
