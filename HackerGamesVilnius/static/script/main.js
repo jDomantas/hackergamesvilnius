@@ -312,14 +312,14 @@ var app = playground({
             var time = Math.floor(this.timer);
             if (!this.isGameRunning) {
                 $("#timer").text("Time to round: " + time);
-                $("#extra").text(this.gameOverMsg + "players joined: " + this.waitingPlayers + "/20");// time to round: " + time);
+                $("#extra").text("Players joined: " + this.waitingPlayers + "/20");// time to round: " + time);
             } else {
 				$("#timer").text("Time left: " + time);
                 $("#extra").text("Round is in progress");
 			}
         } else {
             $("#timer").text(this.gameOverMsg);
-            $("#timer").text("players joined: " + this.waitingPlayers + "/20");
+            $("#extra").text("Players joined: " + this.waitingPlayers + "/20");
         }
         
         if (this.isGameRunning && this.hasJoinedGame) {

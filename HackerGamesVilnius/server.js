@@ -29,7 +29,7 @@ setInterval(function () {
         game.step(dt);
         lastTime = now;
         if (game.timeToEnd <= 0) {
-            io.emit('gameOver', "The game is over. ");
+            io.emit('gameOver', "The round is over");
             waitingForRound = 0;
             io.emit('waitingCount', 0);
             io.emit('timer', { inGame: false, time: 0 });
