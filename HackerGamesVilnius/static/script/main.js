@@ -1,17 +1,17 @@
 "use strict";
 
-var app = playground( {
+var app = playground({
 	
 	//container: document.getElementById('playground_container'),
-
-    /* silently preload assets before main loader */
-    preload: function () { },
-    
-    /* assets from preloader available, push some more for main loader */
-    create: function () {
-        
-        this.loadImages(
-            'guns', 'engines', 'fshield', 'bshield', 
+	
+	/* silently preload assets before main loader */
+	preload: function () { },
+	
+	/* assets from preloader available, push some more for main loader */
+	create: function () {
+		
+		this.loadImages(
+			'guns', 'engines', 'fshield', 'bshield', 
             'gun1', 'gun2', 'gun3', 'gun4', 
             'selfcolor', 'allycolor', 'enemycolor', 
             'shipbase',
@@ -23,176 +23,176 @@ var app = playground( {
             'midfire1', 'midfire2', 'midfire3', 'midfire4', 'midfire5', 'midfire6',
             'bigfire1', 'bigfire2', 'bigfire3', 'bigfire4',
             'rock1', 'rock2', 'rock3');
-        
-        this.selfTeam = 0;
-        this.waitingPlayers = 0;
-        this.timer = 0;
-        this.hasJoinedGame = false;
-        this.isGameRunning = false;
+		
+		this.selfTeam = 0;
+		this.waitingPlayers = 0;
+		this.timer = 0;
+		this.hasJoinedGame = false;
+		this.isGameRunning = false;
 		this.gameOverMsg = "";
 		
 		this.camX = 0;
 		this.camY = 0;
 		
-        this.shieldFrame = 0;
-        this.colorBlend = 0;
-        this.bgColors = [[0x3B, 0x2B, 0x40], [0x5B, 0x41, 0x54], [0x28, 0x30, 0x67], [0x26, 0x50, 0x5E]];
-
-        var socket = io();
-        var self = this;
-        this.particles = [];
-        this.weaponPositions = [-10, 10, -18, 18];
+		this.shieldFrame = 0;
+		this.colorBlend = 0;
+		this.bgColors = [[0x3B, 0x2B, 0x40], [0x5B, 0x41, 0x54], [0x28, 0x30, 0x67], [0x26, 0x50, 0x5E]];
+		
+		var socket = io();
+		var self = this;
+		this.particles = [];
+		this.weaponPositions = [-10, 10, -18, 18];
 		self.socket = socket;
-        
-        $("#bbtn").on('click touchstart', function () { 
-            socket.emit('joinGame', null);            
-        });
-
-        self.socket.on('players', function (data) {
-            var oldPlayers = self.players;
-            if (self.selfTeam && self.selfID) {
-                var s = self.getPlayer(self.selfID);
-                if (s) {
-                    if (s.id !== self.selfID)
-                        throw new Error("wrong ship id");
-                    if (self.selfTeam !== s.team)
-                        throw new Error("wrong self team");
-                }
-            }
-
-            if (self.selfTeam === 0 && self.selfID) {
-                var ship = self.getPlayer(self.selfID);
-                if (ship) {
-                    self.selfTeam = ship.team;
-                    var s = self.getPlayer(self.selfID);
-                    if (s) {
-                        if (s.id !== self.selfID)
-                            throw new Error("wrong ship id");
-                        if (self.selfTeam !== s.team)
-                            throw new Error("wrong self team");
-                    }
+		
+		$("#bbtn").on('click touchstart', function () {
+			socket.emit('joinGame', null);
+		});
+		
+		self.socket.on('players', function (data) {
+			var oldPlayers = self.players;
+			if (self.selfTeam && self.selfID) {
+				var s = self.getPlayer(self.selfID);
+				if (s) {
+					if (s.id !== self.selfID)
+						throw new Error("wrong ship id");
+					if (self.selfTeam !== s.team)
+						throw new Error("wrong self team");
+				}
+			}
+			
+			if (self.selfTeam === 0 && self.selfID) {
+				var ship = self.getPlayer(self.selfID);
+				if (ship) {
+					self.selfTeam = ship.team;
+					var s = self.getPlayer(self.selfID);
+					if (s) {
+						if (s.id !== self.selfID)
+							throw new Error("wrong ship id");
+						if (self.selfTeam !== s.team)
+							throw new Error("wrong self team");
+					}
                     
-                }
-            }
-            self.players = data;
-            if (oldPlayers) {
-                for (var i = oldPlayers.length; i--; ) {
-                    for (var j = data.length; j--; ) {
-                        if (data[j].id === oldPlayers[i].id) {
-                            data[j].vx = oldPlayers[i].vx;
-                            data[j].vy = oldPlayers[i].vy;
-                            data[j].vd = oldPlayers[i].vd;
-                        }
-                    }
-                }
-            } else {
-                for (var i = data.length; i--; )
-                    self.initPlayer(data[i]);
-            }
-        });
-        
-        self.socket.on('map', function (data) {
-            self.map = data;
-            console.log('got map');
-        });
-        
-        self.socket.on('self', function (data) {
-            self.selfID = data.id;
-            self.selfTeam = data.team;
-            
-            if (self.selfID) {
-                var s = self.getPlayer(self.selfID);
-                if (s && self.selfTeam) {
-                    if (s.id !== self.selfID)
-                        throw new Error("wrong ship id");
-                    if (self.selfTeam !== s.team)
-                        throw new Error("wrong self team");
-                }
-            }
-        })
-
-        self.socket.on('joined', function (data) {
-            if (self.players) {
-                self.players.push(data); //add player to players list		
-                self.initPlayer(data);
-            }
-        });
-        
-        self.socket.on('left', function (id) {
-            for (var i = 0; i < self.players.length; i++) {
-                if (self.players.id === id) {
-                    self.players.splice(i, 1); //remove player from players list
-                }
-            }
-        });
-        
-        self.socket.on('dead', function (id) {
-            for (var i = 0; i < self.players.length; i++) {
-                if (self.players.id === id) {
-                    self.players.splice(i, 1); //remove player from players list
-                }
-            }
+				}
+			}
+			self.players = data;
+			if (oldPlayers) {
+				for (var i = oldPlayers.length; i--; ) {
+					for (var j = data.length; j--; ) {
+						if (data[j].id === oldPlayers[i].id) {
+							data[j].vx = oldPlayers[i].vx;
+							data[j].vy = oldPlayers[i].vy;
+							data[j].vd = oldPlayers[i].vd;
+						}
+					}
+				}
+			} else {
+				for (var i = data.length; i--; )
+					self.initPlayer(data[i]);
+			}
+		});
+		
+		self.socket.on('map', function (data) {
+			self.map = data;
+			console.log('got map');
+		});
+		
+		self.socket.on('self', function (data) {
+			self.selfID = data.id;
+			self.selfTeam = data.team;
+			
+			if (self.selfID) {
+				var s = self.getPlayer(self.selfID);
+				if (s && self.selfTeam) {
+					if (s.id !== self.selfID)
+						throw new Error("wrong ship id");
+					if (self.selfTeam !== s.team)
+						throw new Error("wrong self team");
+				}
+			}
+		})
+		
+		self.socket.on('joined', function (data) {
+			if (self.players) {
+				self.players.push(data); //add player to players list		
+				self.initPlayer(data);
+			}
+		});
+		
+		self.socket.on('left', function (id) {
+			for (var i = 0; i < self.players.length; i++) {
+				if (self.players.id === id) {
+					self.players.splice(i, 1); //remove player from players list
+				}
+			}
+		});
+		
+		self.socket.on('dead', function (id) {
+			for (var i = 0; i < self.players.length; i++) {
+				if (self.players.id === id) {
+					self.players.splice(i, 1); //remove player from players list
+				}
+			}
 
             // display some animation?
-        });
-
-        self.socket.on('fire', function (data) {
-            for (var i = data.length; i--; ) {
-                var p = self.getPlayer(data[i].from);
-                var t = self.getPlayer(data[i].to);
-                if (!p || !t) continue;
-                
-                var particles = Math.floor(p.guns * 4 + 1);
-                if (particles < 1) particles = 1;
-                if (particles > 4) particles = 4;
-                var xx = Math.cos(p.vd);
-                var xy = Math.sin(p.vd);
-                var yx = -xy;
-                var yy = xx;
-                for (var j = 0; j < particles; j++) {
-                    var x = p.vx + xx * 23 + yx * self.weaponPositions[j];
-                    var y = p.vy + xy * 23 + yy * self.weaponPositions[j];
-                    self.particles.push({ x: x, y: y, dx: xx * 300, dy: xy * 300, t: 0.3, d: t });
-                }
-            }
-        });
-
-        self.socket.on('timer', function (data) {
-            console.log('got timer data: ' + JSON.stringify(data));
-            self.isGameRunning = data.inGame;
-            if (self.isGameRunning && self.hasJoinedGame) {
-                $("#main_menu").hide();
-            }
-            self.timer = data.time;
-        });
-
-        self.socket.on('waitingCount', function (count) {
-            self.waitingPlayers = count;
+		});
+		
+		self.socket.on('fire', function (data) {
+			for (var i = data.length; i--; ) {
+				var p = self.getPlayer(data[i].from);
+				var t = self.getPlayer(data[i].to);
+				if (!p || !t) continue;
+				
+				var particles = Math.floor(p.guns * 4 + 1);
+				if (particles < 1) particles = 1;
+				if (particles > 4) particles = 4;
+				var xx = Math.cos(p.vd);
+				var xy = Math.sin(p.vd);
+				var yx = -xy;
+				var yy = xx;
+				for (var j = 0; j < particles; j++) {
+					var x = p.vx + xx * 23 + yx * self.weaponPositions[j];
+					var y = p.vy + xy * 23 + yy * self.weaponPositions[j];
+					self.particles.push({ x: x, y: y, dx: xx * 300, dy: xy * 300, t: 0.3, d: t });
+				}
+			}
+		});
+		
+		self.socket.on('timer', function (data) {
+			console.log('got timer data: ' + JSON.stringify(data));
+			self.isGameRunning = data.inGame;
+			if (self.isGameRunning && self.hasJoinedGame) {
+				$("#main_menu").hide();
+			}
+			self.timer = data.time;
+		});
+		
+		self.socket.on('waitingCount', function (count) {
+			self.waitingPlayers = count;
             // disable join button if count == 20, reenable otherwise
             // disable or enable timer
-        });
-
-        self.socket.on('joinedRoom', function (_) {
-            self.hasJoinedGame = true;
-            // disable join button
-            $("#bbtn").prop('disabled', true);
-            console.log('joined!');
-        });
-
-        self.socket.on('gameOver', function (msg) {
-            console.log('game over: ' + msg);
-            self.gameOverMsg = msg;
-            self.isGameRunning = false;
-            $("#bbtn").prop('disabled', false);
-            if (self.hasJoinedGame)
-                $("#main_menu").show();
-
-            self.hasJoinedGame = false;
-            self.selfTeam = 0;
-            self.selfID = null;
-            self.players = null;
 		});
-
+		
+		self.socket.on('joinedRoom', function (_) {
+			self.hasJoinedGame = true;
+			// disable join button
+			$("#bbtn").prop('disabled', true);
+			console.log('joined!');
+		});
+		
+		self.socket.on('gameOver', function (msg) {
+			console.log('game over: ' + msg);
+			self.gameOverMsg = msg;
+			self.isGameRunning = false;
+			$("#bbtn").prop('disabled', false);
+			if (self.hasJoinedGame)
+				$("#main_menu").show();
+			
+			self.hasJoinedGame = false;
+			self.selfTeam = 0;
+			self.selfID = null;
+			self.players = null;
+		});
+		
 		self.socket.on('fullLobby', function () {
 			console.log('tried to join full lobby');
 			$('#errorMsg').text('Lobby is full.');
@@ -206,23 +206,24 @@ var app = playground( {
 			self.selfID = null;
 			self.players = null;
 		});
-    },
-    
-    /* called when main loader has finished	- you want to setState here */
-    ready: function () { 
-        this.images.smalldown = [this.images.smalldown1, this.images.smalldown2, this.images.smalldown3];
-        this.images.smallup = [this.images.smallup1, this.images.smallup2, this.images.smallup3];
-        this.images.bigdown = [this.images.bigdown1, this.images.bigdown2, this.images.bigdown3];
-        this.images.bigup = [this.images.bigup1, this.images.bigup2, this.images.bigup3];
-        this.images.smallfire = [this.images.smallfire1, this.images.smallfire2, this.images.smallfire3, this.images.smallfire4];
-        this.images.midfire = [this.images.midfire1, this.images.midfire2, this.images.midfire3, 
-                               this.images.midfire4, this.images.midfire5, this.images.midfire6];
-        this.images.bigfire = [this.images.bigfire1, this.images.bigfire2, this.images.bigfire3, this.images.bigfire4];
-        this.images.rocks = [this.images.rock1, this.images.rock2, this.images.rock3];
-
+	},
+	
+	/* called when main loader has finished	- you want to setState here */
+	ready: function () {
+		this.images.smalldown = [this.images.smalldown1, this.images.smalldown2, this.images.smalldown3];
+		this.images.smallup = [this.images.smallup1, this.images.smallup2, this.images.smallup3];
+		this.images.bigdown = [this.images.bigdown1, this.images.bigdown2, this.images.bigdown3];
+		this.images.bigup = [this.images.bigup1, this.images.bigup2, this.images.bigup3];
+		this.images.smallfire = [this.images.smallfire1, this.images.smallfire2, this.images.smallfire3, this.images.smallfire4];
+		this.images.midfire = [this.images.midfire1, this.images.midfire2, this.images.midfire3, 
+			this.images.midfire4, this.images.midfire5, this.images.midfire6];
+		this.images.bigfire = [this.images.bigfire1, this.images.bigfire2, this.images.bigfire3, this.images.bigfire4];
+		this.images.rocks = [this.images.rock1, this.images.rock2, this.images.rock3];
+		
 		setTimeout(function () {
-			$('#main_menu').show();
-		}, 1250);
+			$('#main_menu').fadeIn(300)
+				.animate({ top: 0 });
+		}, 400);
     },
     
     /* called after container/window has been resized */
