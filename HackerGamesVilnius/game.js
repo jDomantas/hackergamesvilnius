@@ -217,7 +217,7 @@ Game.prototype.systemPower = function (id, system, value) {
 		case 'engines':
 			player.tengines = value;
 			var otherUse = player.tguns + player.tfsh + player.tbsh;
-			var loadRemaining = sim.maxSystemPower - 1;
+			var loadRemaining = sim.maxSystemPower - value;
 			if (otherUse > loadRemaining) {
 				//give equivivalent percentage of load remaining to other systems
 				player.tguns = player.tguns / otherUse * loadRemaining;
@@ -228,7 +228,7 @@ Game.prototype.systemPower = function (id, system, value) {
 		case 'guns':
 			player.tguns = value;
 			var otherUse = player.tengines + player.tfsh + player.tbsh;
-			var loadRemaining = sim.maxSystemPower - 1;
+			var loadRemaining = sim.maxSystemPower - value;
 			if (otherUse > loadRemaining) {
 				//give equivivalent percentage of load remaining to other systems
 				player.tengines = player.tengines / otherUse * loadRemaining;
@@ -239,7 +239,7 @@ Game.prototype.systemPower = function (id, system, value) {
 		case 'fshield':
 			player.tfsh = value;
 			var otherUse = player.tguns + player.tengines + player.tbsh;
-			var loadRemaining = sim.maxSystemPower - 1;
+			var loadRemaining = sim.maxSystemPower - value;
 			if (otherUse > loadRemaining) {
 				//give equivivalent percentage of load remaining to other systems
 				player.tguns = player.tguns / otherUse * loadRemaining;
@@ -250,7 +250,7 @@ Game.prototype.systemPower = function (id, system, value) {
 		case 'bshield':
 			player.tbsh = value;
 			var otherUse = player.tguns + player.tfsh + player.tengines;
-			var loadRemaining = sim.maxSystemPower - 1;
+			var loadRemaining = sim.maxSystemPower - value;
 			if (otherUse > loadRemaining) {
 				//give equivivalent percentage of load remaining to other systems
 				player.tguns = player.tguns / otherUse * loadRemaining;
