@@ -33,6 +33,7 @@ var app = playground( {
         this.isGameRunning = false;
         this.gameOverMsg = "";
         this.barWidth = 100;
+        this.barHeight = 50;
 		
 		this.camX = 0;
 		this.camY = 0;
@@ -358,11 +359,8 @@ var app = playground( {
         this.layer.drawImage(this.images.energybarempty, x, y, width, 60);
         
         max = Math.round(max * width);
-        if (max % 2 != 0) max -= 1;
-        
-        while (max < width) {
-            this.layer.drawImage(this.images.limitenergy, x + max, y, 2, 60);
-            max += 2;
+        if (max < width) {
+            this.layer.drawImage(this.images.limitenergy, x + max, y, width - max, 60);
         }
         
         fill = Math.round(fill * width);
@@ -377,17 +375,17 @@ var app = playground( {
     },
 
     renderUI: function (p) {
-        this.layer.drawImage(this.images.fshield, 0, 0);
-        this.layer.drawImage(this.images.bshield, 0, 50);
-        this.layer.drawImage(this.images.guns, 0, 100);
-        this.layer.drawImage(this.images.engines, 0, 150);
+        this.layer.drawImage(this.images.fshield, 0, this.barHeight * 0.5 - 25);
+        this.layer.drawImage(this.images.bshield, 0, this.barHeight * 1.5 - 25);
+        this.layer.drawImage(this.images.guns, 0, this.barHeight * 2.5 - 25);
+        this.layer.drawImage(this.images.engines, 0, this.barHeight * 3.5 - 25);
         
         var freeEnergy = sim.maxSystemPower - p.tfsh - p.tbsh - p.tguns - p.tengines;
 
-        this.drawBar(60, -5, this.barWidth, p.fsh, p.tfsh, p.tfsh + freeEnergy);
-        this.drawBar(60, 45, this.barWidth, p.bsh, p.tbsh, p.tbsh + freeEnergy);
-        this.drawBar(60, 95, this.barWidth, p.guns, p.tguns, p.tguns + freeEnergy);
-        this.drawBar(60, 145, this.barWidth, p.engines, p.tengines, p.tengines + freeEnergy);
+        this.drawBar(60, this.barHeight * 0.5 - 30, this.barWidth, p.fsh, p.tfsh, p.tfsh + freeEnergy);
+        this.drawBar(60, this.barHeight * 1.5 - 30, this.barWidth, p.bsh, p.tbsh, p.tbsh + freeEnergy);
+        this.drawBar(60, this.barHeight * 2.5 - 30, this.barWidth, p.guns, p.tguns, p.tguns + freeEnergy);
+        this.drawBar(60, this.barHeight * 3.5 - 30, this.barWidth, p.engines, p.tengines, p.tengines + freeEnergy);
     },
 	
 	clamp: function(value, min, max){
@@ -420,17 +418,22 @@ var app = playground( {
 		this.layer.setTransform(1, 0, 0, 1, 0, 0);
 
 		var player = this.getPlayer(this.selfID);
-		if (player) {
+        if (player) {
+            var height = this.height;
+            var miny = 0;
+            if (this.width < this.height) {
+                this.barHeight = this.clamp((this.height - this.width) / 4, 50, 80);
+                height = this.height - this.barHeight * 4;
+                miny = -this.barHeight * 4;
+            }
 			this.camX = -this.clamp(player.vx - this.width / 2, 0, sim.mapWidth - this.width);
-            this.camY = -this.clamp(player.vy - this.height / 2, 0, sim.mapHeight - this.height);
-            if (this.width < this.height)
-                this.camY += 100;
+            this.camY = -this.clamp(player.vy - height / 2 + miny, miny, sim.mapHeight - this.height);
 		}
 		this.layer.translate(this.camX, this.camY);
 		//sets camera pos
 		
-        this.layer.a(0.4).drawImage(this.images.bg, -100 + 100 * Math.cos(this.colorBlend / 10), -300 + 100 * Math.sin(this.colorBlend / 10), 2500, 2500).ra();
-        this.layer.a(0.4).drawImage(this.images.bg2, -100 + 100 * Math.cos(this.colorBlend / 10 * Math.Pi + 3), -300 + 50 * Math.sin(this.colorBlend / 10 * 2), 2500, 2500).ra();
+        this.layer.a(0.4).drawImage(this.images.bg, -100 + 100 * Math.cos(this.colorBlend / 10), -600 + 100 * Math.sin(this.colorBlend / 10), 3000, 3000).ra();
+        this.layer.a(0.4).drawImage(this.images.bg2, -100 + 100 * Math.cos(this.colorBlend / 10 * Math.Pi + 3), -600 + 50 * Math.sin(this.colorBlend / 10 * 2), 3000, 3000).ra();
         
         if (this.players) {
             for (var i = this.particles.length; i--; ) {
@@ -610,7 +613,7 @@ var app = playground( {
 	/* pointers (mouse and touches) */
 	pointerdown: function (data) {
 		if (this.isGameRunning === true) {
-            if (data.x < this.barWidth + 20 && data.y < 200) { //click on slider part
+            if (data.x < this.barWidth + 80 && data.y < this.barHeight * 4) { //click on slider part
                 var val = (data.x - 60) / this.barWidth;
                 if (val < 0) val = 0;
                 if (val > 1) val = 1;
@@ -618,19 +621,19 @@ var app = playground( {
                 if (this.selfID)
                     p = this.getPlayer(this.selfID);
 
-				if (data.y > 0 && data.y <= 50) {
+				if (data.y > 0 && data.y <= this.barHeight) {
                     this.socket.emit('power', { system: 'fshield', value: val });
                     p.tfsh = val;
 				}
-				if (data.y > 50 && data.y <= 100) {
+				if (data.y > this.barHeight && data.y <= this.barHeight * 2) {
 					this.socket.emit('power', { system: 'bshield', value: val });
                     p.tbsh = val;
 				}
-				if (data.y > 100 && data.y <= 150) {
+				if (data.y > this.barHeight * 2&& data.y <= this.barHeight * 3) {
 					this.socket.emit('power', { system: 'guns', value: val });
                     p.tguns = val;
 				}
-				if (data.y > 150 && data.y <= 200) {
+				if (data.y > this.barHeight * 3 && data.y <= this.barHeight * 4) {
 					this.socket.emit('power', { system: 'engines', value: val });
                     p.tengines = val;
 				}
@@ -641,7 +644,38 @@ var app = playground( {
 		}
 	},
 	pointerup: function (data) { },
-	pointermove: function(data) { },
+    pointermove: function (data) {
+        if (!this.mouse.left && !this.mouse.right && !this.mouse.middle && !data.touch)
+            return;
+
+        if (this.isGameRunning === true) {
+            if (data.x < this.barWidth + 80 && data.y < this.barHeight * 4) { //click on slider part
+                var val = (data.x - 60) / this.barWidth;
+                if (val < 0) val = 0;
+                if (val > 1) val = 1;
+                var p = null;
+                if (this.selfID)
+                    p = this.getPlayer(this.selfID);
+                
+                if (data.y > 0 && data.y <= this.barHeight) {
+                    this.socket.emit('power', { system: 'fshield', value: val });
+                    p.tfsh = val;
+                }
+                if (data.y > this.barHeight && data.y <= this.barHeight * 2) {
+                    this.socket.emit('power', { system: 'bshield', value: val });
+                    p.tbsh = val;
+                }
+                if (data.y > this.barHeight * 2 && data.y <= this.barHeight * 3) {
+                    this.socket.emit('power', { system: 'guns', value: val });
+                    p.tguns = val;
+                }
+                if (data.y > this.barHeight * 3 && data.y <= this.barHeight * 4) {
+                    this.socket.emit('power', { system: 'engines', value: val });
+                    p.tengines = val;
+                }
+            }
+        }
+    },
 
 	/* mouse trap */
 	mousedown: function (data) { },

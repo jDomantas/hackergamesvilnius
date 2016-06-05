@@ -10,7 +10,7 @@ function Game(io) {
 	
 	this.spawnSize = 500;
 
-    this.timeToEnd = 10;
+    this.timeToEnd = 120;
     this.nextFire = 0;
 
     this.localData = {};
