@@ -16,7 +16,7 @@ http.listen(listeningPort, function () { console.log('listening on *:' + listeni
 
 var maxPlayers = 10;
 var waitingForRound = 0;
-var roundWaitTime = 15;
+var roundWaitTime = 30;
 var timeOfStart = 0;
 
 var lastTime = Date.now();

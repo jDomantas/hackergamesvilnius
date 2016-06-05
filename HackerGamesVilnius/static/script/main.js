@@ -188,7 +188,9 @@ var app = playground({
 			self.isGameRunning = data.inGame;
 			if (self.isGameRunning && self.hasJoinedGame) {
 				$("#main_menu").hide();
-			}
+            }
+            if (self.isGameRunning)
+                $("#bbtn").prop('disabled', true);
 			self.timer = data.time;
 		});
 		
@@ -308,14 +310,16 @@ var app = playground({
             if (this.timer < 0)
                 this.timer = 0;
             var time = Math.floor(this.timer);
-			if (!this.isGameRunning)
-				$("#timer").text(this.gameOverMsg + "Players joined: " + this.waitingPlayers + "/20, time to round: " + time);
-			else {
-				$("#timer").text(this.gameOverMsg + "Round time left: " + time);
-				$("#bbtn").prop('disabled', true);
+            if (!this.isGameRunning) {
+                $("#timer").text("Time to round: " + time);
+                $("#extra").text(this.gameOverMsg + "players joined: " + this.waitingPlayers + "/20");// time to round: " + time);
+            } else {
+				$("#timer").text("Time left: " + time);
+                $("#extra").text("Round is in progress");
 			}
         } else {
-            $("#timer").text(this.gameOverMsg + "Players joined: " + this.waitingPlayers + "/20, waiting for more.");
+            $("#timer").text(this.gameOverMsg);
+            $("#timer").text("players joined: " + this.waitingPlayers + "/20");
         }
         
         if (this.isGameRunning && this.hasJoinedGame) {
