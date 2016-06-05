@@ -1,18 +1,18 @@
 "use strict";
 
-var app = playground( {
+var app = playground({
     
     //smoothing: false,
 	//container: document.getElementById('playground_container'),
-
-    /* silently preload assets before main loader */
-    preload: function () { },
-    
-    /* assets from preloader available, push some more for main loader */
-    create: function () {
-        
-        this.loadImages(
-            'guns', 'engines', 'fshield', 'bshield', 
+	
+	/* silently preload assets before main loader */
+	preload: function () { },
+	
+	/* assets from preloader available, push some more for main loader */
+	create: function () {
+		
+		this.loadImages(
+			'guns', 'engines', 'fshield', 'bshield', 
             'gun1', 'gun2', 'gun3', 'gun4', 
             'selfcolor', 'allycolor', 'enemycolor', 
             'shipbase',
@@ -33,6 +33,7 @@ var app = playground( {
         this.timer = 0;
         this.hasJoinedGame = false;
         this.isGameRunning = false;
+
         this.gameOverMsg = "";
         this.barWidth = 100;
         this.barHeight = 50;
@@ -54,35 +55,34 @@ var app = playground( {
         this.particles = [];
         this.weaponPositions = [-10, 10, -18, 18];
 		self.socket = socket;
-        
-        $("#bbtn").on('click touchstart', function () { 
-            socket.emit('joinGame', null);            
-        });
-
-        self.socket.on('players', function (data) {
-            var oldPlayers = self.players;
-            if (self.selfTeam && self.selfID) {
-                var s = self.getPlayer(self.selfID);
-                if (s) {
-                    if (s.id !== self.selfID)
-                        throw new Error("wrong ship id");
-                    if (self.selfTeam !== s.team)
-                        throw new Error("wrong self team");
-                }
-            }
-
-            if (self.selfTeam === 0 && self.selfID) {
-                var ship = self.getPlayer(self.selfID);
-                if (ship) {
-                    self.selfTeam = ship.team;
-                    var s = self.getPlayer(self.selfID);
-                    if (s) {
-                        if (s.id !== self.selfID)
-                            throw new Error("wrong ship id");
-                        if (self.selfTeam !== s.team)
-                            throw new Error("wrong self team");
-                    }
-                    
+		
+		$("#bbtn").on('click touchstart', function () {
+			socket.emit('joinGame', null);
+		});
+		
+		self.socket.on('players', function (data) {
+			var oldPlayers = self.players;
+			if (self.selfTeam && self.selfID) {
+				var s = self.getPlayer(self.selfID);
+				if (s) {
+					if (s.id !== self.selfID)
+						throw new Error("wrong ship id");
+					if (self.selfTeam !== s.team)
+						throw new Error("wrong self team");
+				}
+			}
+			
+			if (self.selfTeam === 0 && self.selfID) {
+				var ship = self.getPlayer(self.selfID);
+				if (ship) {
+					self.selfTeam = ship.team;
+					var s = self.getPlayer(self.selfID);
+					if (s) {
+						if (s.id !== self.selfID)
+							throw new Error("wrong ship id");
+						if (self.selfTeam !== s.team)
+							throw new Error("wrong self team");
+					}
                 }
             }
             self.players = data;
@@ -159,42 +159,41 @@ var app = playground( {
                     self.players.splice(i, 1); //remove player from players list
                 }
             }
-
             // display some animation?
-        });
-
-        self.socket.on('fire', function (data) {
-            for (var i = data.length; i--; ) {
-                var p = self.getPlayer(data[i].from);
-                var t = self.getPlayer(data[i].to);
-                if (!p || !t) continue;
-                
-                var particles = Math.floor(p.guns * 4 + 1);
-                if (particles < 1) particles = 1;
-                if (particles > 4) particles = 4;
-                var xx = Math.cos(p.vd);
-                var xy = Math.sin(p.vd);
-                var yx = -xy;
-                var yy = xx;
-                for (var j = 0; j < particles; j++) {
-                    var x = p.vx + xx * 23 + yx * self.weaponPositions[j];
-                    var y = p.vy + xy * 23 + yy * self.weaponPositions[j];
-                    self.particles.push({ x: x, y: y, dx: xx * 300, dy: xy * 300, t: 0.3, d: t });
-                }
-            }
-        });
-
-        self.socket.on('timer', function (data) {
-            console.log('got timer data: ' + JSON.stringify(data));
-            self.isGameRunning = data.inGame;
-            if (self.isGameRunning && self.hasJoinedGame) {
-                $("#main_menu").hide();
-            }
-            self.timer = data.time;
-        });
-
-        self.socket.on('waitingCount', function (count) {
-            self.waitingPlayers = count;
+		});
+		
+		self.socket.on('fire', function (data) {
+			for (var i = data.length; i--; ) {
+				var p = self.getPlayer(data[i].from);
+				var t = self.getPlayer(data[i].to);
+				if (!p || !t) continue;
+				
+				var particles = Math.floor(p.guns * 4 + 1);
+				if (particles < 1) particles = 1;
+				if (particles > 4) particles = 4;
+				var xx = Math.cos(p.vd);
+				var xy = Math.sin(p.vd);
+				var yx = -xy;
+				var yy = xx;
+				for (var j = 0; j < particles; j++) {
+					var x = p.vx + xx * 23 + yx * self.weaponPositions[j];
+					var y = p.vy + xy * 23 + yy * self.weaponPositions[j];
+					self.particles.push({ x: x, y: y, dx: xx * 300, dy: xy * 300, t: 0.3, d: t });
+				}
+			}
+		});
+		
+		self.socket.on('timer', function (data) {
+			console.log('got timer data: ' + JSON.stringify(data));
+			self.isGameRunning = data.inGame;
+			if (self.isGameRunning && self.hasJoinedGame) {
+				$("#main_menu").hide();
+			}
+			self.timer = data.time;
+		});
+		
+		self.socket.on('waitingCount', function (count) {
+			self.waitingPlayers = count;
             // disable join button if count == 20, reenable otherwise
             // disable or enable timer
         });
@@ -221,7 +220,28 @@ var app = playground( {
             self.explosions = [];
             self.shipParts = [];
 		});
-
+		
+		self.socket.on('joinedRoom', function (_) {
+			self.hasJoinedGame = true;
+			// disable join button
+			$("#bbtn").prop('disabled', true);
+			console.log('joined!');
+		});
+		
+		self.socket.on('gameOver', function (msg) {
+			console.log('game over: ' + msg);
+			self.gameOverMsg = msg;
+			self.isGameRunning = false;
+			$("#bbtn").prop('disabled', false);
+			if (self.hasJoinedGame)
+				$("#main_menu").show();
+			
+			self.hasJoinedGame = false;
+			self.selfTeam = 0;
+			self.selfID = null;
+			self.players = null;
+		});
+		
 		self.socket.on('fullLobby', function () {
 			console.log('tried to join full lobby');
 			$('#errorMsg').text('Lobby is full.');
@@ -252,8 +272,9 @@ var app = playground( {
         this.images.deathpart = [this.images.deathpart1, this.images.deathpart2, this.images.deathpart3];
 
 		setTimeout(function () {
-			$('#main_menu').show();
-		}, 1250);
+			$('#main_menu').fadeIn(300)
+				.animate({ top: 0 });
+		}, 400);
     },
     
     /* called after container/window has been resized */
