@@ -161,6 +161,17 @@ Game.prototype.getPlayer = function (id) {
 
 Game.prototype.step = function (dt) {
     
+    if (this.players.length === 0)
+        this.timeToEnd = 0;
+    
+    var allSame = true;
+    for (var i = this.players.length; i--; )
+        if (this.players[i].team !== this.players[0].team)
+            allSame = false;
+    
+    if (allSame && this.timeToEnd > 5)
+        this.timeToEnd = 5;
+
     this.timeToEnd -= dt;
 
     this.nextState -= dt;

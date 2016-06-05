@@ -24,7 +24,9 @@ var app = playground( {
             'midfire1', 'midfire2', 'midfire3', 'midfire4', 'midfire5', 'midfire6',
             'bigfire1', 'bigfire2', 'bigfire3', 'bigfire4',
             'rock1', 'rock2', 'rock3',
-            'border1', 'border2', 'border3', 'counter', 'energybar', 'energybarempty', 'energybarend', 'limitenergy');
+            'border1', 'border2', 'border3', 'counter', 'energybar', 'energybarempty', 'energybarend', 'limitenergy',
+            'death1', 'death2', 'death3', 'death4',
+            'deathpart1', 'deathpart2', 'deathpart3');
         
         this.selfTeam = 0;
         this.waitingPlayers = 0;
@@ -34,6 +36,8 @@ var app = playground( {
         this.gameOverMsg = "";
         this.barWidth = 100;
         this.barHeight = 50;
+        this.explosions = [];
+        this.shipParts = [];
 		
 		this.camX = 0;
 		this.camY = 0;
@@ -127,7 +131,9 @@ var app = playground( {
         
         self.socket.on('left', function (id) {
             for (var i = 0; i < self.players.length; i++) {
-                if (self.players.id === id) {
+                if (self.players[i].id === id) {
+                    var p = self.players[i];
+                    self.explosions.push({ x: p.x, y: p.y, t: 0.39 });
                     self.players.splice(i, 1); //remove player from players list
                 }
             }
@@ -135,7 +141,21 @@ var app = playground( {
         
         self.socket.on('dead', function (id) {
             for (var i = 0; i < self.players.length; i++) {
-                if (self.players.id === id) {
+                if (self.players[i].id === id) {
+                    var p = self.players[i];
+                    self.explosions.push({ x: p.vx, y: p.vy, t: 0.39 });
+                    for (var j = 3; j--; ) {
+                        self.shipParts.push({
+                            x: p.vx, 
+                            y: p.vy, 
+                            dx: Math.random() * 20 - 10, 
+                            dy: Math.random() * 20 - 10,
+                            dir: p.vd,
+                            dd: (Math.random() - 0.5) / 10,
+                            i: j,
+                            t: 4 + Math.random() * 2,
+                        });
+                    }
                     self.players.splice(i, 1); //remove player from players list
                 }
             }
@@ -198,6 +218,8 @@ var app = playground( {
             self.selfTeam = 0;
             self.selfID = null;
             self.players = null;
+            self.explosions = [];
+            self.shipParts = [];
 		});
 
 		self.socket.on('fullLobby', function () {
@@ -226,6 +248,8 @@ var app = playground( {
                                this.images.midfire4, this.images.midfire5, this.images.midfire6];
         this.images.bigfire = [this.images.bigfire1, this.images.bigfire2, this.images.bigfire3, this.images.bigfire4];
         this.images.rocks = [this.images.rock1, this.images.rock2, this.images.rock3];
+        this.images.death = [this.images.death4, this.images.death3, this.images.death2, this.images.death1];
+        this.images.deathpart = [this.images.deathpart1, this.images.deathpart2, this.images.deathpart3];
 
 		setTimeout(function () {
 			$('#main_menu').show();
@@ -242,6 +266,21 @@ var app = playground( {
         while (this.shieldFrame >= 0.3)
             this.shieldFrame -= 0.3;
         
+        for (var i = this.explosions.length; i--; ) {
+            this.explosions[i].t -= dt;
+            if (this.explosions[i].t < 0)
+                this.explosions.splice(i, 1);
+        }
+        
+        for (var i = this.shipParts.length; i--; ) {
+            this.shipParts[i].x += this.shipParts[i].dx * dt;
+            this.shipParts[i].y += this.shipParts[i].dy * dt;
+            this.shipParts[i].dir += this.shipParts[i].dd * dt;
+            this.shipParts[i].t -= dt;
+            if (this.shipParts[i].t < 0)
+                this.shipParts.splice(i, 1);
+        }
+
 		if (this.isGameRunning || (this.waitingPlayers >= 2)) {
 			if(this.timer > 0)
 				this.timer -= dt;
@@ -440,7 +479,7 @@ var app = playground( {
                 var p = this.particles[i];
                 this.layer
                     .strokeStyle('#F40')
-                    .lineWidth(2)
+                    .lineWidth(5)
                     .beginPath()
                     .moveTo(p.x, p.y)
                     .lineTo(p.x + p.dx / 100, p.y + p.dy / 100)
@@ -461,7 +500,20 @@ var app = playground( {
                         .drawImage(this.images.rocks[rock.tex], -rock.r, -rock.r, rock.r * 2, rock.r * 2)
                         .restore();
                 }
-			
+            
+            for (var i = this.shipParts.length; i--; ) {
+                this.layer
+                    .save()
+                    .translate(this.shipParts[i].x, this.shipParts[i].y)
+                    .rotate(this.shipParts[i].dir)
+                    .drawImage(this.images.deathpart[this.shipParts[i].i], -50, -50)
+                    .restore();
+            }
+            
+            for (var i = this.explosions.length; i--; ) {
+                this.layer.drawImage(this.images.death[Math.floor(4 / 0.4 * this.explosions[i].t)], this.explosions[i].x - 100, this.explosions[i].y - 100, 200, 200);
+            }
+            
             if (this.selfID) {
                 var p = this.getPlayer(this.selfID);
                 if (p) {
@@ -497,6 +549,8 @@ var app = playground( {
             }
 
         }
+
+        this.layer.font('40px Verdana').fillStyle('#FFF').fillText('Time left: ' + Math.max(0, Math.floor(this.timer)), 10, this.height - 30);
     },
 
     getPlayer: function (id) {
